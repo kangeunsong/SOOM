@@ -1,0 +1,12 @@
+# 루트에 위치
+# flutter_fastapi_auth/.gitignore
+
+# FastAPI
+backend/.env
+
+# Flutter
+frontend/.env
+
+# 가상환경
+venv/
+.env

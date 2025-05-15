@@ -2,8 +2,8 @@ import requests
 import urllib.parse
 import datetime
 from sqlalchemy.orm import Session
-from models import Weather
-from config import settings
+from..models import Weather
+from ..config import settings
 
 class WeatherService:
     def __init__(self):

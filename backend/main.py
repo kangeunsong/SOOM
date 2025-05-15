@@ -1,19 +1,20 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from database import SessionLocal, engine
+from .database import SessionLocal, engine
+
 from jose import JWTError, jwt
 from datetime import timedelta
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-from api import weather, dust
-from models import Base
-from database import engine
-from scheduler import start_scheduler
-import models
-import schemas
-import crud
+from .api import weather, dust
+from .models import Base
+from .database import engine
+from .scheduler import start_scheduler
+from .import models
+from .import schemas
+from .import crud
 
 models.Base.metadata.create_all(bind=engine)
 

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-import models, schemas
+from .import models, schemas
 from passlib.context import CryptContext
 from jose import jwt
 from datetime import datetime, timedelta

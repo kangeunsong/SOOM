@@ -1,10 +1,10 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy.orm import Session
-from database import SessionLocal
-from services.weather_service import WeatherService
-from services.dust_service import DustService
-from config import settings
+from .database import SessionLocal
+from .services.weather_service import WeatherService
+from .services.dust_service import DustService
+from .config import settings
 import asyncio
 
 weather_service = WeatherService()

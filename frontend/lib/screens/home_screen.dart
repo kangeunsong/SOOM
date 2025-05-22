@@ -636,32 +636,6 @@ void _showLocationSelectionDialog() {
   );
 }
 
-  // void _showLocationSelectionDialog() {
-  //   showDialog(
-  //     context: context,
-  //     builder: (context) => AlertDialog(
-  //       title: const Text('지역 선택'),
-  //       content: SizedBox(
-  //         width: double.maxFinite,
-  //         height: 400,
-  //         child: ListView(
-  //           children: AppConfig.locationMap.entries.map((entry) {
-  //             return ListTile(
-  //               title: Text(entry.value),
-  //               selected: _currentLocation == entry.key,
-  //               selectedTileColor: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
-  //               onTap: () {
-  //                 Navigator.pop(context);
-  //                 _changeLocation(entry.key);
-  //               },
-  //             );
-  //           }).toList(),
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
-
   void _navigateToWeatherDetail() {
     if (_currentWeather != null) {
       Navigator.push(
@@ -723,39 +697,6 @@ void _calculateVentilationStatus() {
     _ventilationMessage = "환기하기 좋은 날씨입니다. 창문을 열어 신선한 공기를 들이세요.";
   }
 }
-
-  // // 환기 권장 여부 계산 메서드 추가
-  // void _calculateVentilationStatus() {
-  //   if (_currentWeather == null || _currentAirQuality == null) return;
-    
-  //   // 날씨 조건 확인 (비/눈이 오는 경우)
-  //   bool badWeather = _currentWeather!.precipitation > 0.5 ||
-  //                     (_currentWeather!.skyCondition?.contains('비') == true) ||
-  //                     (_currentWeather!.skyCondition?.contains('눈') == true);
-    
-  //   // 온도 조건 확인 (너무 춥거나 너무 더운 경우)
-  //   bool extremeTemperature = _currentWeather!.temperature < 5 || 
-  //                            _currentWeather!.temperature > 30;
-    
-  //   // 미세먼지 조건 확인
-  //   bool highDust = _currentAirQuality!.pm10 > 80 || _currentAirQuality!.pm25 > 35;
-    
-  //   // 환기 권장 여부 결정
-  //   _isVentilationRecommended = !badWeather && !extremeTemperature && !highDust;
-    
-  //   // 메시지 설정
-  //   if (badWeather) {
-  //     _ventilationMessage = "비/눈이 오고 있어요. 창문을 닫아두세요.";
-  //   } else if (extremeTemperature) {
-  //     _ventilationMessage = _currentWeather!.temperature < 5 
-  //         ? "날씨가 춥습니다. 창문을 닫아두세요." 
-  //         : "날씨가 덥습니다. 에어컨 사용 시 창문을 닫아두세요.";
-  //   } else if (highDust) {
-  //     _ventilationMessage = "미세먼지가 나쁨 상태입니다. 창문을 닫아두세요.";
-  //   } else {
-  //     _ventilationMessage = "환기하기 좋은 날씨입니다. 창문을 열어 신선한 공기를 들이세요.";
-  //   }
-  // }
 
   // 환기 버튼 액션 메서드
   void _handleVentilationAction(bool openWindow) {
@@ -1002,11 +943,35 @@ void _calculateVentilationStatus() {
                     ],
                   ),
                 ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _loadWeatherData,
-        tooltip: '새로고침',
-        child: const Icon(Icons.refresh),
-      ),
+   floatingActionButton: FloatingActionButton(
+ onPressed: () async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('새로고침 중입니다...')),
+    );
+
+    final success = await _apiService.triggerManualFetch();
+    
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('데이터 수집을 요청했습니다')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('데이터 수집 요청 실패')),
+      );
+    }
+
+    // UI 갱신도 필요하면 수동으로 날씨 다시 로드
+    _loadWeatherData();
+  },
+  tooltip: '새로고침',
+  child: const Icon(Icons.refresh),
+),
+
     );
   }
 }

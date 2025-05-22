@@ -115,13 +115,18 @@ import '../models/weather.dart';
 import '../models/air_quality.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://10.0.2.2:8000';
+  static const String baseUrl = 'https://34b5-113-198-180-140.ngrok-free.app';
+
+  // static const String baseUrl = 'http://10.0.2.2:8000';
   String? lastErrorMessage;
  Future<bool> signup(String username, String email, String password) async {
   try {
-    final response = await http.post(
-      Uri.parse('$baseUrl/signup'),
-      headers: {'Content-Type': 'application/json'},
+   final response = await http.post(
+  Uri.parse('$baseUrl/token'),
+  headers: {
+    'ngrok-skip-browser-warning': 'true',
+    'Content-Type': 'application/x-www-form-urlencoded',  // 필요시
+  },
       body: jsonEncode({
         'username': username,
         'email': email,
@@ -255,6 +260,17 @@ Future<AirQuality> getCurrentAirQuality(String locationCode) async {
     throw Exception('Failed to load air quality data');
   }
 }
+Future<bool> triggerManualFetch() async {
+  final url = Uri.parse('$baseUrl/fetch-now');
+  final response = await http.post(url);
+
+  if (response.statusCode == 200) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 
 //   // 특정 위치의 현재 미세먼지 정보 조회
 // Future<AirQuality> getCurrentAirQuality(String locationCode) async {

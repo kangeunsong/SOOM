@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from .database import SessionLocal, engine
-
+from .api import fetch  # ← 추가
 from jose import JWTError, jwt
 from datetime import timedelta
 from fastapi import FastAPI
@@ -81,7 +81,7 @@ app.add_middleware(
 # 라우터 등록
 app.include_router(weather.router)
 app.include_router(dust.router)
-
+app.include_router(fetch.router)  # ← 추가
 @app.on_event("startup")
 async def startup_event():
     """애플리케이션 시작 시 스케줄러 시작"""

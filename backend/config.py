@@ -11,6 +11,11 @@ class Settings(BaseSettings):
     DUST_API_KEY: str
     SCHEDULER_INTERVAL: int
     API_BASE_URL: str  # ✅ 이 줄 추가
+    db_user: str
+    db_password: str
+    db_host: str
+    db_port: str
+    db_name: str
 
     class Config:
         env_file = ".env"

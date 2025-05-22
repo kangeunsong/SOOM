@@ -295,14 +295,7 @@ void _handleVentilationAction(bool openWindow) {
                                 const SizedBox(height: 16),
                                 _buildWeatherAdvice(),
                                 const SizedBox(height: 8),
-                                const Text(
-                                  '※ 날씨 정보는 기상청 API를 통해 제공됩니다.',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                ),
+                         
                               ],
                             ),
                           ),

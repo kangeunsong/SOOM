@@ -2,7 +2,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppConfig {
-  static String get apiBaseUrl => dotenv.env['API_BASE_URL'] ?? 'http://10.0.2.2:8000';
+  static String get apiBaseUrl => dotenv.env['API_BASE_URL'] ?? 'https://34b5-113-198-180-140.ngrok-free.app';
   
   static const Map<String, String> locationMap = {
    '60,127': '서울',

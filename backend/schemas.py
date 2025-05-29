@@ -57,3 +57,13 @@ class AirQuality(AirQualityBase):
 class WeatherResponse(BaseModel):
     weather: Weather
     air_quality: Optional[AirQuality] = None
+
+from pydantic import BaseModel
+
+class SensorDataCreate(BaseModel):
+    device_id: str
+    temperature: float
+    humidity: float
+
+class SensorDataOut(SensorDataCreate):
+    timestamp: str

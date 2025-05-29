@@ -40,3 +40,16 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
         expire = datetime.utcnow() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+from sqlalchemy.orm import Session
+from . import models, schemas
+
+def save_sensor_data(db: Session, data: schemas.SensorDataCreate):
+    entry = models.SensorData(**data.dict())
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    return entry
+
+def get_latest_sensor_data(db: Session):
+    return db.query(models.SensorData).order_by(models.SensorData.timestamp.desc()).first()

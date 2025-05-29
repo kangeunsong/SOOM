@@ -115,7 +115,8 @@ import '../models/weather.dart';
 import '../models/air_quality.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://34b5-113-198-180-140.ngrok-free.app';
+  static const String baseUrl = 'https://5912-113-198-180-200.ngrok-free.app';
+
 
   // static const String baseUrl = 'http://10.0.2.2:8000';
   String? lastErrorMessage;

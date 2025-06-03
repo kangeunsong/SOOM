@@ -14,8 +14,9 @@ import 'package:flutter_fastapi_auth/screens/weather_detail_screen.dart';
 import 'package:porcupine_flutter/porcupine_manager.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-const String _accessKey =
-    '2rWMrOXfh5Mxg4y8sjgQE4rfj7fMIaL7Qia0xJNQdS2Q5CQAfBRhMg=='; // porcupine access key (웨이크 워드 감지)
+import '../services/wakeword_service.dart';
+
+final WakewordService _wakewordService = WakewordService();
 
 // 센서 데이터 모델
 class SensorData {
@@ -133,44 +134,12 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadUsername();
     _startSensorMonitoring();
 
-    _checkPermissions();
-    _initWakeWord();
+    _wakewordService.initWakeWord((index) {
+      _showWakeWordPopup(); // 웨이크워드 감지 시 UI(팝업창) 처리
+    });
   }
 
-  Future<void> _initWakeWord() async {
-    try {
-      print("🟡 웨이크워드 초기화 시작...");
-      _porcupineManager = await PorcupineManager.fromKeywordPaths(
-        _accessKey,
-        ['assets/soomiya_ko_android_v3_0_0.ppn'],
-        (index) {
-          print("🎧 콜백: keywordIndex=$index");
-          _wakeWordCallback(index);
-        },
-        modelPath: 'assets/porcupine_params_ko.pv', // 한국어 모델 경로 지정
-      );
-
-      await _porcupineManager!.start();
-      setState(() {
-        _isListening = true;
-      });
-      print("🟢 웨이크워드 감지 시작됨!");
-    } catch (e, stackTrace) {
-      print("🔴 에러 발생: $e");
-      print(stackTrace);
-    }
-  }
-
-  Future<void> _checkPermissions() async {
-    var status = await Permission.microphone.status;
-    if (!status.isGranted) {
-      await Permission.microphone.request();
-    }
-  }
-
-  // 웨이크워드 감지 시
-  void _wakeWordCallback(int keywordIndex) {
-    // 팝업창 띄우기
+  void _showWakeWordPopup() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -209,8 +178,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _sensorCheckTimer?.cancel();
-    _porcupineManager?.stop();
-    _porcupineManager?.delete();
+    _wakewordService.stop();
     super.dispose();
   }
 

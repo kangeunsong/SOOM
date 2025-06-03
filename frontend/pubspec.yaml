@@ -15,9 +15,14 @@ dependencies:
   provider: ^6.0.0
   shared_preferences: ^2.0.15
   geolocator: ^10.1.0
+  porcupine_flutter: ^3.0.3
+  permission_handler: ^11.0.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 flutter:
   uses-material-design: true
+  assets:
+    - assets/soomiya_ko_android_v3_0_0.ppn
+    - assets/porcupine_params_ko.pv

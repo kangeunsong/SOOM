@@ -1,109 +1,3 @@
-// // lib/services/api_service.dart
-
-// import 'dart:convert';
-// import 'package:flutter_fastapi_auth/models/air_quality.dart';
-// import 'package:flutter_fastapi_auth/models/weather.dart';
-// import 'package:http/http.dart' as http;
-// import 'package:shared_preferences/shared_preferences.dart';
-
-
-// class ApiService {
-//   static const String baseUrl = 'http://10.0.2.2:8000';
-
-  
-
-//   Future<bool> signup(String username, String email, String password) async {
-//     final response = await http.post(
-//       Uri.parse('$baseUrl/signup'),
-//       headers: {'Content-Type': 'application/json'},
-//       body: jsonEncode({
-//         'username': username,
-//         'email': email,
-//         'password': password,
-//       }),
-//     );
-//     return response.statusCode == 200;
-//   }
-
-//   Future<bool> login(String username, String password) async {
-//     final response = await http.post(
-//       Uri.parse('$baseUrl/token'),
-//       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-//       body: 'username=$username&password=$password',
-//     );
-//     if (response.statusCode == 200) {
-//       final data = jsonDecode(response.body);
-//       final prefs = await SharedPreferences.getInstance();
-//       await prefs.setString('token', data['access_token']);
-//       return true;
-//     }
-//     return false;
-//   }
-
-//   Future<String?> getProfile() async {
-//     final prefs = await SharedPreferences.getInstance();
-//     String? token = prefs.getString('token');
-//     if (token == null) return null;
-
-//     final response = await http.get(
-//       Uri.parse('$baseUrl/users/me'),
-//       headers: {'Authorization': 'Bearer $token'},
-//     );
-//     if (response.statusCode == 200) {
-//       return response.body;
-//     }
-//     return null;
-//   }
-
-//    Future<Weather> getCurrentWeather(String locationCode) async {
-//     final response = await http.get(
-//       Uri.parse('$baseUrl/api/weather/current/$locationCode'),
-//     );
-
-//     if (response.statusCode == 200) {
-//       return Weather.fromJson(json.decode(response.body));
-//     } else {
-//       throw Exception('날씨 정보를 불러오는데 실패했습니다');
-//     }
-//   }
-//   Future<List<Weather>> getWeatherHistory(String locationCode, {int days = 1}) async {
-//     final response = await http.get(
-//       Uri.parse('$baseUrl/api/weather/history/$locationCode?days=$days'),
-//     );
-
-//     if (response.statusCode == 200) {
-//       List<dynamic> jsonList = json.decode(response.body);
-//       return jsonList.map((json) => Weather.fromJson(json)).toList();
-//     } else {
-//       throw Exception('날씨 이력을 불러오는데 실패했습니다');
-//     }
-//   }
-//   Future<AirQuality> getCurrentAirQuality(String locationCode) async {
-//     final response = await http.get(
-//       Uri.parse('$baseUrl/api/dust/current/$locationCode'),
-//     );
-
-//     if (response.statusCode == 200) {
-//       return AirQuality.fromJson(json.decode(response.body));
-//     } else {
-//       throw Exception('미세먼지 정보를 불러오는데 실패했습니다');
-//     }
-//   }
-//   Future<List<AirQuality>> getAirQualityHistory(String locationCode, {int days = 1}) async {
-//     final response = await http.get(
-//       Uri.parse('$baseUrl/api/dust/history/$locationCode?days=$days'),
-//     );
-
-//     if (response.statusCode == 200) {
-//       List<dynamic> jsonList = json.decode(response.body);
-//       return jsonList.map((json) => AirQuality.fromJson(json)).toList();
-//     } else {
-//       throw Exception('미세먼지 이력을 불러오는데 실패했습니다');
-//     }
-//   }
-
-  
-// }
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -117,47 +11,46 @@ import '../models/air_quality.dart';
 class ApiService {
   static const String baseUrl = 'https://5912-113-198-180-200.ngrok-free.app';
 
-
   // static const String baseUrl = 'http://10.0.2.2:8000';
   String? lastErrorMessage;
- Future<bool> signup(String username, String email, String password) async {
-  try {
-   final response = await http.post(
-  Uri.parse('$baseUrl/token'),
-  headers: {
-    'ngrok-skip-browser-warning': 'true',
-    'Content-Type': 'application/x-www-form-urlencoded',  // 필요시
-  },
-      body: jsonEncode({
-        'username': username,
-        'email': email,
-        'password': password,
-      }),
-    );
-    
-    print('회원가입 응답: ${response.statusCode} - ${response.body}');
-    
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return true;
-    } else {
-      Map<String, dynamic> responseBody = {};
-      try {
-        responseBody = jsonDecode(response.body);
-      } catch (e) {
-        // JSON이 아닌 경우
+  Future<bool> signup(String username, String email, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/token'),
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+          'Content-Type': 'application/x-www-form-urlencoded', // 필요시
+        },
+        body: jsonEncode({
+          'username': username,
+          'email': email,
+          'password': password,
+        }),
+      );
+
+      print('회원가입 응답: ${response.statusCode} - ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return true;
+      } else {
+        Map<String, dynamic> responseBody = {};
+        try {
+          responseBody = jsonDecode(response.body);
+        } catch (e) {
+          // JSON이 아닌 경우
+        }
+
+        lastErrorMessage = responseBody['detail'] ?? '회원가입 실패: 알 수 없는 오류';
+        return false;
       }
-      
-      lastErrorMessage = responseBody['detail'] ?? '회원가입 실패: 알 수 없는 오류';
+    } catch (e) {
+      print('회원가입 중 예외 발생: $e');
+      lastErrorMessage = '네트워크 오류: $e';
       return false;
     }
-  } catch (e) {
-    print('회원가입 중 예외 발생: $e');
-    lastErrorMessage = '네트워크 오류: $e';
-    return false;
   }
-}
 
- // 로그인 메서드
+  // 로그인 메서드
   Future<bool> login(String username, String password) async {
     try {
       final response = await http.post(
@@ -165,7 +58,7 @@ class ApiService {
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: 'username=$username&password=$password',
       );
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final prefs = await SharedPreferences.getInstance();
@@ -183,7 +76,6 @@ class ApiService {
       return false;
     }
   }
-
 
   // 로그아웃 메서드
   Future<bool> logout() async {
@@ -204,12 +96,12 @@ class ApiService {
       final prefs = await SharedPreferences.getInstance();
       String? token = prefs.getString('token');
       if (token == null) return null;
-      
+
       final response = await http.get(
         Uri.parse('$baseUrl/users/me'),
         headers: {'Authorization': 'Bearer $token'},
       );
-      
+
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
@@ -235,9 +127,9 @@ class ApiService {
     }
   }
 
-
   // 특정 위치의 날씨 이력 조회
-  Future<List<Weather>> getWeatherHistory(String locationCode, {int days = 1}) async {
+  Future<List<Weather>> getWeatherHistory(String locationCode,
+      {int days = 1}) async {
     final response = await http.get(
       Uri.parse('$baseUrl/api/weather/history/$locationCode?days=$days'),
     );
@@ -250,65 +142,32 @@ class ApiService {
     }
   }
 
+  Future<AirQuality> getCurrentAirQuality(String locationCode) async {
+    final response =
+        await http.get(Uri.parse('$baseUrl/api/dust/current/$locationCode'));
 
-Future<AirQuality> getCurrentAirQuality(String locationCode) async {
-  final response = await http.get(Uri.parse('$baseUrl/api/dust/current/$locationCode'));
-
-  if (response.statusCode == 200) {
-    final decoded = json.decode(utf8.decode(response.bodyBytes));
-    return AirQuality.fromJson(decoded);
-  } else {
-    throw Exception('Failed to load air quality data');
+    if (response.statusCode == 200) {
+      final decoded = json.decode(utf8.decode(response.bodyBytes));
+      return AirQuality.fromJson(decoded);
+    } else {
+      throw Exception('Failed to load air quality data');
+    }
   }
-}
-Future<bool> triggerManualFetch() async {
-  final url = Uri.parse('$baseUrl/fetch-now');
-  final response = await http.post(url);
 
-  if (response.statusCode == 200) {
-    return true;
-  } else {
-    return false;
+  Future<bool> triggerManualFetch() async {
+    final url = Uri.parse('$baseUrl/fetch-now');
+    final response = await http.post(url);
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      return false;
+    }
   }
-}
 
-
-//   // 특정 위치의 현재 미세먼지 정보 조회
-// Future<AirQuality> getCurrentAirQuality(String locationCode) async {
-//   try {
-//     final response = await http.get(
-//       Uri.parse('$baseUrl/api/dust/current/$locationCode'),
-//     );
-
-//     if (response.statusCode == 200) {
-//       return AirQuality.fromJson(json.decode(response.body));
-//     } else {
-//       print('미세먼지 정보를 불러오는데 실패했습니다: ${response.statusCode} - ${response.body}');
-//       // 실패 시 기본 미세먼지 객체 반환
-//       return AirQuality(
-//         locationCode: locationCode,
-//         locationName: AppConfig.locationMap[locationCode] ?? '알 수 없는 위치',
-//         pm10: 30.0,
-//         pm25: 15.0,
-//         airQualityIndex: '정보 없음',
-//         recordedAt: DateTime.now(),
-//       );
-//     }
-//   } catch (e) {
-//     print('미세먼지 정보를 불러오는 중 오류 발생: $e');
-//     // 예외 발생 시 기본 미세먼지 객체 반환
-//     return AirQuality(
-//       locationCode: locationCode,
-//       locationName: AppConfig.locationMap[locationCode] ?? '알 수 없는 위치',
-//       pm10: 30.0,
-//       pm25: 15.0,
-//       airQualityIndex: '정보 없음',
-//       recordedAt: DateTime.now(),
-//     );
-//   }
-// }
   // 특정 위치의 미세먼지 이력 조회
-  Future<List<AirQuality>> getAirQualityHistory(String locationCode, {int days = 1}) async {
+  Future<List<AirQuality>> getAirQualityHistory(String locationCode,
+      {int days = 1}) async {
     final response = await http.get(
       Uri.parse('$baseUrl/api/dust/history/$locationCode?days=$days'),
     );

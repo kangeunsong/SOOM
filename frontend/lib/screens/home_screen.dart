@@ -20,7 +20,7 @@
 // // // //   late Future<String> _defaultLocationFuture;
 // // // //   late String _currentLocation;
 // // // //   String? _username;
-  
+
 // // // //   Weather? _currentWeather;
 // // // //   AirQuality? _currentAirQuality;
 // // // //   bool _isLoading = true;
@@ -55,7 +55,7 @@
 // // // //     try {
 // // // //       final weather = await _apiService.getCurrentWeather(_currentLocation);
 // // // //       final airQuality = await _apiService.getCurrentAirQuality(_currentLocation);
-      
+
 // // // //       setState(() {
 // // // //         _currentWeather = weather;
 // // // //         _currentAirQuality = airQuality;
@@ -143,8 +143,8 @@
 // // // //             final name = AppConfig.locationMap[code] ?? '알 수 없음';
 // // // //             return ActionChip(
 // // // //               label: Text(name),
-// // // //               backgroundColor: _currentLocation == code 
-// // // //                 ? Theme.of(context).primaryColor.withOpacity(0.3) 
+// // // //               backgroundColor: _currentLocation == code
+// // // //                 ? Theme.of(context).primaryColor.withOpacity(0.3)
 // // // //                 : null,
 // // // //               onPressed: () {
 // // // //                 Navigator.pop(context);
@@ -198,7 +198,7 @@
 // // // //                   builder: (context) => const SettingsScreen(),
 // // // //                 ),
 // // // //               );
-              
+
 // // // //               if (result != null && result is String) {
 // // // //                 _changeLocation(result);
 // // // //               }
@@ -475,7 +475,6 @@
 // // import 'package:flutter_fastapi_auth/config.dart';
 // // import 'package:flutter_fastapi_auth/screens/weather_detail_screen.dart';
 
-
 // // class HomeScreen extends StatefulWidget {
 // //   const HomeScreen({Key? key}) : super(key: key);
 
@@ -494,7 +493,7 @@
 // //   String? _error;
 // //   bool _isVentilationRecommended = false;
 // //   String _ventilationMessage = "";
-  
+
 // //   @override
 // //   void initState() {
 // //     super.initState();
@@ -734,17 +733,17 @@
 
 // //   // // 환기 버튼 액션 메서드
 // //   // void _handleVentilationAction(bool openWindow) {
-// //   //   String message = openWindow 
-// //   //       ? "창문을 열어 환기를 시작합니다." 
+// //   //   String message = openWindow
+// //   //       ? "창문을 열어 환기를 시작합니다."
 // //   //       : "창문을 닫습니다.";
-    
+
 // //   //   ScaffoldMessenger.of(context).showSnackBar(
 // //   //     SnackBar(
 // //   //       content: Text(message),
 // //   //       duration: Duration(seconds: 2),
 // //   //     ),
 // //   //   );
-    
+
 // //   //   // 여기에 실제 스마트홈 연동 로직을 추가할 수 있습니다.
 // //   //   // 예: _apiService.controlWindow(_currentLocation, openWindow);
 // //   // }
@@ -762,7 +761,7 @@
 // //         _currentWeather = weather;
 // //         _currentAirQuality = airQuality;
 // //         _isLoading = false;
-        
+
 // //         // 환기 권장 여부 계산 추가
 // //         _calculateVentilationStatus();
 // //       });
@@ -841,7 +840,7 @@
 // //                           child: AirQualityCard(airQuality: _currentAirQuality!),
 // //                         ),
 // //                       const SizedBox(height: 16),
-                      
+
 // //                       // 환기 상태 카드 추가
 // //                       if (_currentWeather != null && _currentAirQuality != null)
 // //                         Card(
@@ -878,7 +877,7 @@
 // //                                   ],
 // //                                 ),
 // //                                 const SizedBox(height: 12),
-                                
+
 // //                                 // 환기 조건 요약
 // //                                 Container(
 // //                                   padding: const EdgeInsets.all(8),
@@ -891,9 +890,9 @@
 // //                                     children: [
 // //                                       Row(
 // //                                         // children: [
-// //                                         //   // Icon(Icons.thermostat, 
-// //                                         //   //     color: _currentWeather!.temperature > 30 || _currentWeather!.temperature < 5 
-// //                                         //   //         ? Colors.red : Colors.green, 
+// //                                         //   // Icon(Icons.thermostat,
+// //                                         //   //     color: _currentWeather!.temperature > 30 || _currentWeather!.temperature < 5
+// //                                         //   //         ? Colors.red : Colors.green,
 // //                                         //   //     size: 16),
 // //                                         //   const SizedBox(width: 4),
 // //                                         //   Text('온도: ${_currentWeather!.temperature.toStringAsFixed(1)}°C'),
@@ -902,8 +901,8 @@
 // //                                       // const SizedBox(height: 4),
 // //                                       // Row(
 // //                                       //   children: [
-// //                                       //     Icon(Icons.air, 
-// //                                       //         color: _currentAirQuality!.pm10 > 80 ? Colors.red : Colors.green, 
+// //                                       //     Icon(Icons.air,
+// //                                       //         color: _currentAirQuality!.pm10 > 80 ? Colors.red : Colors.green,
 // //                                       //         size: 16),
 // //                                       //     const SizedBox(width: 4),
 // //                                       //     Text('미세먼지: ${_currentAirQuality!.pm10.toStringAsFixed(0)}μg/m³'),
@@ -912,8 +911,8 @@
 // //                                       // const SizedBox(height: 4),
 // //                                       // Row(
 // //                                       //   children: [
-// //                                       //     Icon(Icons.water_drop, 
-// //                                       //         color: _currentWeather!.precipitation > 0.5 ? Colors.red : Colors.green, 
+// //                                       //     Icon(Icons.water_drop,
+// //                                       //         color: _currentWeather!.precipitation > 0.5 ? Colors.red : Colors.green,
 // //                                       //         size: 16),
 // //                                       //     const SizedBox(width: 4),
 // //                                       //     Text('강수량: ${_currentWeather!.precipitation.toStringAsFixed(1)}mm'),
@@ -922,7 +921,7 @@
 // //                                     ],
 // //                                   ),
 // //                                 ),
-                                
+
 // //                                 const SizedBox(height: 12),
 // //                                 Text(
 // //                                   _ventilationMessage,
@@ -933,7 +932,7 @@
 // //                                   ),
 // //                                 ),
 // //                                 const SizedBox(height: 16),
-                                
+
 // //                                 // 창문 열기/닫기 버튼
 // //                                 Row(
 // //                                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -967,7 +966,7 @@
 // //                             ),
 // //                           ),
 // //                         ),
-                      
+
 // //                       const SizedBox(height: 16),
 // //                       // ElevatedButton.icon(
 // //                       //   icon: const Icon(Icons.place),
@@ -988,7 +987,7 @@
 // //     );
 
 // //     final success = await _apiService.triggerManualFetch();
-    
+
 // //     if (success) {
 // //       ScaffoldMessenger.of(context).showSnackBar(
 // //         const SnackBar(content: Text('데이터 수집을 요청했습니다')),
@@ -1153,18 +1152,18 @@
 //   String? _error;
 //   bool _isVentilationRecommended = false;
 //   String _ventilationMessage = "";
-  
+
 //   // 센서 관련 변수들
 //   SensorData? _lastSensorData;
 //   Timer? _sensorCheckTimer;
 //   bool _isMonitoringActive = true;
-  
+
 //   // 센서 임계값 설정
 //   static const int LIGHT_THRESHOLD_DARK = 200;  // 어두워지는 기준
 //   static const int LIGHT_THRESHOLD_BRIGHT = 500; // 밝아지는 기준
 //   static const int GAS_THRESHOLD_HIGH = 500;    // 가스 농도 높음 기준
 //   static const int GAS_THRESHOLD_NORMAL = 300;  // 가스 농도 정상 기준
-  
+
 //   @override
 //   void initState() {
 //     super.initState();
@@ -1227,11 +1226,11 @@
 //       if (response.statusCode == 200) {
 //         final data = json.decode(response.body);
 //         final newSensorData = SensorData.fromJson(data);
-        
+
 //         if (_lastSensorData != null) {
 //           _analyzeSensorChanges(_lastSensorData!, newSensorData);
 //         }
-        
+
 //         setState(() {
 //           _lastSensorData = newSensorData;
 //         });
@@ -1280,7 +1279,7 @@
 //       }
 //       // 가스 농도가 정상으로 돌아왔을 때 (외부 공기질이 나쁘면 닫기 권장)
 //       else if (old.gas! > GAS_THRESHOLD_HIGH && current.gas! < GAS_THRESHOLD_NORMAL) {
-//         if (_currentAirQuality != null && 
+//         if (_currentAirQuality != null &&
 //             (_currentAirQuality!.pm10 > 80 || _currentAirQuality!.pm25 > 35)) {
 //           popupReason = "실내 공기질이 개선되었지만 외부 미세먼지가 나쁩니다. 창문을 닫는 것을 권장합니다.";
 //           shouldOpenWindow = false;
@@ -1575,7 +1574,7 @@
 //         _currentWeather = weather;
 //         _currentAirQuality = airQuality;
 //         _isLoading = false;
-        
+
 //         // 환기 권장 여부 계산 추가
 //         _calculateVentilationStatus();
 //       });
@@ -1662,7 +1661,7 @@
 //                             ),
 //                           ),
 //                         ),
-                      
+
 //                       // 센서 상태 카드 추가
 //                       if (_lastSensorData != null)
 //                         Card(
@@ -1702,31 +1701,31 @@
 //                                           const Icon(Icons.lightbulb, color: Colors.amber),
 //                                           const SizedBox(height: 4),
 //                                           Text('조도'),
-//                                           Text('${_lastSensorData!.light}', 
+//                                           Text('${_lastSensorData!.light}',
 //                                                style: const TextStyle(fontWeight: FontWeight.bold)),
 //                                         ],
 //                                       ),
 //                                     if (_lastSensorData!.gas != null)
 //                                       Column(
 //                                         children: [
-//                                           Icon(Icons.air, 
-//                                                color: _lastSensorData!.gas! > GAS_THRESHOLD_HIGH 
+//                                           Icon(Icons.air,
+//                                                color: _lastSensorData!.gas! > GAS_THRESHOLD_HIGH
 //                                                    ? Colors.red : Colors.green),
 //                                           const SizedBox(height: 4),
 //                                           Text('공기질'),
-//                                           Text('${_lastSensorData!.gas}', 
+//                                           Text('${_lastSensorData!.gas}',
 //                                                style: const TextStyle(fontWeight: FontWeight.bold)),
 //                                         ],
 //                                       ),
 //                                     if (_lastSensorData!.pir != null)
 //                                       Column(
 //                                         children: [
-//                                           Icon(Icons.person, 
-//                                                color: _lastSensorData!.pir == 1 
+//                                           Icon(Icons.person,
+//                                                color: _lastSensorData!.pir == 1
 //                                                    ? Colors.blue : Colors.grey),
 //                                           const SizedBox(height: 4),
 //                                           Text('움직임'),
-//                                           Text(_lastSensorData!.pir == 1 ? '감지' : '없음', 
+//                                           Text(_lastSensorData!.pir == 1 ? '감지' : '없음',
 //                                                style: const TextStyle(fontWeight: FontWeight.bold)),
 //                                         ],
 //                                       ),
@@ -1737,7 +1736,7 @@
 //                           ),
 //                         ),
 //                       const SizedBox(height: 16),
-                      
+
 //                       if (_currentWeather != null)
 //                         InkWell(
 //                           onTap: _navigateToWeatherDetail,
@@ -1750,7 +1749,7 @@
 //                           child: AirQualityCard(airQuality: _currentAirQuality!),
 //                         ),
 //                       const SizedBox(height: 16),
-                      
+
 //                       // 환기 상태 카드
 //                       if (_currentWeather != null && _currentAirQuality != null)
 //                         Card(
@@ -1787,7 +1786,7 @@
 //                                   ],
 //                                 ),
 //                                 const SizedBox(height: 12),
-                                
+
 //                                 Text(
 //                                   _ventilationMessage,
 //                                   style: TextStyle(
@@ -1797,7 +1796,7 @@
 //                                   ),
 //                                 ),
 //                                 const SizedBox(height: 16),
-                                
+
 //                                 // 창문 열기/닫기 버튼
 //                                 Row(
 //                                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1831,7 +1830,7 @@
 //                             ),
 //                           ),
 //                         ),
-                      
+
 //                       const SizedBox(height: 16),
 //                     ],
 //                   ),
@@ -1847,7 +1846,7 @@
 //           );
 
 //           final success = await _apiService.triggerManualFetch();
-          
+
 //           if (success) {
 //             ScaffoldMessenger.of(context).showSnackBar(
 //               const SnackBar(content: Text('데이터 수집을 요청했습니다')),
@@ -1916,7 +1915,8 @@ class SensorData {
       pir: _safeToInt(json['pir']),
       light: _safeToInt(json['light']),
       gas: _safeToInt(json['gas']),
-      timestamp: DateTime.parse(json['timestamp'] ?? DateTime.now().toIso8601String()),
+      timestamp:
+          DateTime.parse(json['timestamp'] ?? DateTime.now().toIso8601String()),
     );
   }
 }
@@ -1956,8 +1956,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String _ventilationMessage = "";
   bool _useDummySensorData = true;
   // HomeScreen State 클래스 내에 선언
-  bool _dummyPopupShown = false;       // 더미 데이터 팝업 표시 여부
-  bool _realPopupShown = false;        // 실제 데이터 팝업 표시 여부
+  bool _dummyPopupShown = false; // 더미 데이터 팝업 표시 여부
+  bool _realPopupShown = false; // 실제 데이터 팝업 표시 여부
 
   // 센서 관련 변수들
   SensorData? _lastSensorData;
@@ -1965,26 +1965,53 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _sensorCheckTimer;
   bool _isMonitoringActive = true;
   List<SensorData> _sensorHistory = [];
-  
+
   // 센서 임계값 설정 (더 세밀하게 조정)
-  static const int LIGHT_THRESHOLD_DARK = 150;    // 어두워지는 기준 (낮아짐)
-  static const int LIGHT_THRESHOLD_BRIGHT = 400;  // 밝아지는 기준 (높아짐)
-  static const int LIGHT_CHANGE_THRESHOLD = 100;  // 급격한 조도 변화 기준
-  
-  static const int GAS_THRESHOLD_HIGH = 300;      // 가스 농도 높음 기준 (낮춤)
-  static const int GAS_THRESHOLD_NORMAL = 100;    // 가스 농도 정상 기준
-  static const int GAS_CHANGE_THRESHOLD = 50;     // 급격한 가스 변화 기준
-  
+  static const int LIGHT_THRESHOLD_DARK = 150; // 어두워지는 기준 (낮아짐)
+  static const int LIGHT_THRESHOLD_BRIGHT = 400; // 밝아지는 기준 (높아짐)
+  static const int LIGHT_CHANGE_THRESHOLD = 100; // 급격한 조도 변화 기준
+
+  static const int GAS_THRESHOLD_HIGH = 300; // 가스 농도 높음 기준 (낮춤)
+  static const int GAS_THRESHOLD_NORMAL = 100; // 가스 농도 정상 기준
+  static const int GAS_CHANGE_THRESHOLD = 50; // 급격한 가스 변화 기준
+
   @override
   void initState() {
     super.initState();
-    _defaultLocationFuture = AppConfig.getDefaultLocation();
-    _defaultLocationFuture.then((location) {
-      _currentLocation = location;
-      _loadWeatherData();
+
+    // 1️⃣ SharedPreferences에서 기존 위치 불러오기 (기본값: 서울)
+    AppConfig.getDefaultLocation().then((location) {
+      setState(() {
+        _currentLocation = location;
+      });
+      _loadWeatherData(); // 초기 날씨 로딩
     });
+
+    // 2️⃣ 실제 GPS 위치 받아서 가장 가까운 지역으로 자동 설정
+    _autoSetNearestLocation();
+
     _loadUsername();
     _startSensorMonitoring();
+  }
+
+  /// 위치 기반으로 가장 가까운 지역 자동 설정
+  void _autoSetNearestLocation() async {
+    try {
+      final locationCode = await AppConfig.getNearestLocationCode();
+      await AppConfig.setDefaultLocation(locationCode);
+
+      setState(() {
+        _currentLocation = locationCode;
+      });
+
+      _loadWeatherData();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('현재 위치 기반으로 지역을 자동 설정했습니다')),
+      );
+    } catch (e) {
+      print('[위치 업데이트 에러] $e');
+    }
   }
 
   @override
@@ -2016,29 +2043,30 @@ class _HomeScreenState extends State<HomeScreen> {
       Navigator.pushReplacementNamed(context, '/login');
     }
   }
-void _triggerDummySensorPopup() {
-  if (_dummyPopupShown) return;      // 이미 한 번 띄운 뒤에는 무시
-  _dummyPopupShown = true;
 
-  final dummyOld = SensorData(
-    deviceId: 'dummy',
-    pir: 0,
-    light: LIGHT_THRESHOLD_BRIGHT + 50,
-    gas: GAS_THRESHOLD_NORMAL - 20,
-    timestamp: DateTime.now().subtract(const Duration(seconds: 10)),
-  );
-  final dummyCurrent = SensorData(
-    deviceId: 'dummy',
-    pir: 1,
-    light: LIGHT_THRESHOLD_DARK - 50,
-    gas: GAS_THRESHOLD_HIGH + 100,
-    timestamp: DateTime.now(),
-  );
-  final analysis = _analyzeSensorChanges(dummyOld, dummyCurrent);
-  if (analysis != null) {
-    _showSmartVentilationPopup(analysis);
+  void _triggerDummySensorPopup() {
+    if (_dummyPopupShown) return; // 이미 한 번 띄운 뒤에는 무시
+    _dummyPopupShown = true;
+
+    final dummyOld = SensorData(
+      deviceId: 'dummy',
+      pir: 0,
+      light: LIGHT_THRESHOLD_BRIGHT + 50,
+      gas: GAS_THRESHOLD_NORMAL - 20,
+      timestamp: DateTime.now().subtract(const Duration(seconds: 10)),
+    );
+    final dummyCurrent = SensorData(
+      deviceId: 'dummy',
+      pir: 1,
+      light: LIGHT_THRESHOLD_DARK - 50,
+      gas: GAS_THRESHOLD_HIGH + 100,
+      timestamp: DateTime.now(),
+    );
+    final analysis = _analyzeSensorChanges(dummyOld, dummyCurrent);
+    if (analysis != null) {
+      _showSmartVentilationPopup(analysis);
+    }
   }
-}
 
 // // HomeScreen State 클래스 내에 추가
 // void _triggerDummySensorPopup() {
@@ -2075,63 +2103,69 @@ void _triggerDummySensorPopup() {
   Future<void> _checkSensorData() async {
     try {
       final response = await http.get(
-        Uri.parse('https://5912-113-198-180-200.ngrok-free.app/iot/data/latest'),
+        Uri.parse(
+            'https://5912-113-198-180-200.ngrok-free.app/iot/data/latest'),
         headers: {'Content-Type': 'application/json'},
       );
-if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final newSensorData = SensorData.fromJson(data);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final newSensorData = SensorData.fromJson(data);
 
-      setState(() {
-        _previousSensorData = _lastSensorData;
-        _lastSensorData = newSensorData;
-        _sensorHistory.insert(0, newSensorData);
-        if (_sensorHistory.length > 20) {
-          _sensorHistory = _sensorHistory.take(20).toList();
-        }
-      });
+        setState(() {
+          _previousSensorData = _lastSensorData;
+          _lastSensorData = newSensorData;
+          _sensorHistory.insert(0, newSensorData);
+          if (_sensorHistory.length > 20) {
+            _sensorHistory = _sensorHistory.take(20).toList();
+          }
+        });
 
-      if (_previousSensorData != null) {
-        final analysis = _analyzeSensorChanges(_previousSensorData!, newSensorData);
-        // 팝업이 필요하고 아직 띄우지 않았다면
-        if (analysis != null && !_realPopupShown) {
-          _realPopupShown = true;
-          _showSmartVentilationPopup(analysis);
+        if (_previousSensorData != null) {
+          final analysis =
+              _analyzeSensorChanges(_previousSensorData!, newSensorData);
+          // 팝업이 필요하고 아직 띄우지 않았다면
+          if (analysis != null && !_realPopupShown) {
+            _realPopupShown = true;
+            _showSmartVentilationPopup(analysis);
+          }
+          // 분석 결과가 없으면(정상 상태), 다음 이벤트를 위해 플래그 초기화
+          if (analysis == null && _realPopupShown) {
+            _realPopupShown = false;
+          }
         }
-        // 분석 결과가 없으면(정상 상태), 다음 이벤트를 위해 플래그 초기화
-        if (analysis == null && _realPopupShown) {
-          _realPopupShown = false;
-        }
+      } else {
+        print('센서 데이터 조회 실패: ${response.statusCode}');
+        if (_useDummySensorData) _triggerDummySensorPopup();
       }
-    } else {
-      print('센서 데이터 조회 실패: ${response.statusCode}');
+    } catch (e) {
+      print('센서 데이터 확인 오류: $e');
       if (_useDummySensorData) _triggerDummySensorPopup();
     }
-  } catch (e) {
-    print('센서 데이터 확인 오류: $e');
-    if (_useDummySensorData) _triggerDummySensorPopup();
   }
-}
+
   // 개선된 센서 변화 분석
   SensorAnalysis? _analyzeSensorChanges(SensorData old, SensorData current) {
     // 1. 급격한 가스 농도 증가 (최우선)
     if (old.gas != null && current.gas != null) {
       int gasChange = current.gas! - old.gas!;
-      
-      if (gasChange > GAS_CHANGE_THRESHOLD && current.gas! > GAS_THRESHOLD_HIGH) {
+
+      if (gasChange > GAS_CHANGE_THRESHOLD &&
+          current.gas! > GAS_THRESHOLD_HIGH) {
         return SensorAnalysis(
           shouldOpenWindow: true,
-          reason: "🚨 실내 공기질이 급격히 악화되었습니다!\n가스 농도: ${old.gas} → ${current.gas}\n즉시 환기가 필요합니다.",
+          reason:
+              "🚨 실내 공기질이 급격히 악화되었습니다!\n가스 농도: ${old.gas} → ${current.gas}\n즉시 환기가 필요합니다.",
           urgency: "high",
           color: Colors.red,
         );
       }
-      
+
       // 가스 농도가 높은 상태에서 움직임 감지
       if ((current.pir ?? 0) == 1 && current.gas! > GAS_THRESHOLD_HIGH) {
         return SensorAnalysis(
           shouldOpenWindow: true,
-          reason: "👤 움직임이 감지되었고 실내 공기질이 나쁩니다.\n가스 농도: ${current.gas}\n환기를 권장합니다.",
+          reason:
+              "👤 움직임이 감지되었고 실내 공기질이 나쁩니다.\n가스 농도: ${current.gas}\n환기를 권장합니다.",
           urgency: "high",
           color: Colors.orange,
         );
@@ -2141,9 +2175,10 @@ if (response.statusCode == 200) {
     // 2. 조도 변화 기반 시간대 분석
     if (old.light != null && current.light != null) {
       int lightChange = current.light! - old.light!;
-      
+
       // 급격히 어두워짐 (저녁/밤)
-      if (lightChange < -LIGHT_CHANGE_THRESHOLD && current.light! < LIGHT_THRESHOLD_DARK) {
+      if (lightChange < -LIGHT_CHANGE_THRESHOLD &&
+          current.light! < LIGHT_THRESHOLD_DARK) {
         // 외부 공기질이 나쁘거나 가스 농도가 정상이면 창문 닫기 권장
         if (_shouldCloseWindowAtNight()) {
           return SensorAnalysis(
@@ -2154,13 +2189,15 @@ if (response.statusCode == 200) {
           );
         }
       }
-      
+
       // 급격히 밝아짐 (아침)
-      else if (lightChange > LIGHT_CHANGE_THRESHOLD && current.light! > LIGHT_THRESHOLD_BRIGHT) {
+      else if (lightChange > LIGHT_CHANGE_THRESHOLD &&
+          current.light! > LIGHT_THRESHOLD_BRIGHT) {
         if (_shouldOpenWindowInMorning(current)) {
           return SensorAnalysis(
             shouldOpenWindow: true,
-            reason: "☀️ 밝아졌습니다!\n실내 공기질이 양호하고 환기하기 좋은 시간입니다.\n신선한 공기를 위해 창문을 여는 것을 권장합니다.",
+            reason:
+                "☀️ 밝아졌습니다!\n실내 공기질이 양호하고 환기하기 좋은 시간입니다.\n신선한 공기를 위해 창문을 여는 것을 권장합니다.",
             urgency: "low",
             color: Colors.green,
           );
@@ -2170,9 +2207,10 @@ if (response.statusCode == 200) {
 
     // 3. 공기질 개선 후 외부 상황 고려
     if (old.gas != null && current.gas != null) {
-      if (old.gas! > GAS_THRESHOLD_HIGH && current.gas! < GAS_THRESHOLD_NORMAL) {
+      if (old.gas! > GAS_THRESHOLD_HIGH &&
+          current.gas! < GAS_THRESHOLD_NORMAL) {
         // 실내 공기질은 좋아졌지만 외부 미세먼지가 나쁘면 닫기 권장
-        if (_currentAirQuality != null && 
+        if (_currentAirQuality != null &&
             (_currentAirQuality!.pm10 > 80 || _currentAirQuality!.pm25 > 35)) {
           return SensorAnalysis(
             shouldOpenWindow: false,
@@ -2198,7 +2236,8 @@ if (response.statusCode == 200) {
     if (_currentAirQuality != null) {
       if (_currentAirQuality!.pm10 > 80 || _currentAirQuality!.pm25 > 35) {
         return "외부 미세먼지가 나쁩니다.";
-      } else if (_currentAirQuality!.pm10 > 50 || _currentAirQuality!.pm25 > 25) {
+      } else if (_currentAirQuality!.pm10 > 50 ||
+          _currentAirQuality!.pm25 > 25) {
         return "외부 미세먼지가 보통 수준입니다.";
       }
     }
@@ -2207,10 +2246,11 @@ if (response.statusCode == 200) {
 
   bool _shouldOpenWindowInMorning(SensorData current) {
     // 실내 공기질이 양호하고 외부 공기질도 괜찮을 때만
-    bool indoorAirGood = current.gas == null || current.gas! < GAS_THRESHOLD_NORMAL;
-    bool outdoorAirGood = _currentAirQuality == null || 
+    bool indoorAirGood =
+        current.gas == null || current.gas! < GAS_THRESHOLD_NORMAL;
+    bool outdoorAirGood = _currentAirQuality == null ||
         (_currentAirQuality!.pm10 < 50 && _currentAirQuality!.pm25 < 25);
-    
+
     return indoorAirGood && outdoorAirGood;
   }
 
@@ -2221,7 +2261,8 @@ if (response.statusCode == 200) {
       barrierDismissible: analysis.urgency != "high", // 긴급한 경우 터치로 닫기 불가
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -2231,7 +2272,9 @@ if (response.statusCode == 200) {
             child: Row(
               children: [
                 Icon(
-                  analysis.shouldOpenWindow ? Icons.window : Icons.window_outlined,
+                  analysis.shouldOpenWindow
+                      ? Icons.window
+                      : Icons.window_outlined,
                   color: analysis.color,
                   size: 32,
                 ),
@@ -2251,7 +2294,8 @@ if (response.statusCode == 200) {
                       if (analysis.urgency == "high")
                         Container(
                           margin: const EdgeInsets.only(top: 4),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             color: Colors.orange,
                             borderRadius: BorderRadius.circular(8),
@@ -2276,7 +2320,7 @@ if (response.statusCode == 200) {
                 style: const TextStyle(fontSize: 16, height: 1.4),
               ),
               const SizedBox(height: 20),
-              
+
               // 현재 센서 상태 표시
               if (_lastSensorData != null) ...[
                 Container(
@@ -2291,7 +2335,8 @@ if (response.statusCode == 200) {
                     children: [
                       const Text(
                         '📊 현재 센서 상태',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       const SizedBox(height: 12),
                       _buildSensorStatusRow(),
@@ -2299,7 +2344,7 @@ if (response.statusCode == 200) {
                   ),
                 ),
               ],
-              
+
               // 외부 날씨 정보
               if (_currentWeather != null && _currentAirQuality != null) ...[
                 const SizedBox(height: 16),
@@ -2315,12 +2360,15 @@ if (response.statusCode == 200) {
                     children: [
                       const Text(
                         '🌤️ 외부 환경',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       const SizedBox(height: 8),
                       Text('기온: ${_currentWeather!.temperature}°C'),
-                      Text('미세먼지: ${_currentAirQuality!.pm10.toStringAsFixed(0)}㎍/㎥ (${_getAirQualityStatus(_currentAirQuality!.pm10)})'),
-                      Text('초미세먼지: ${_currentAirQuality!.pm25.toStringAsFixed(0)}㎍/㎥'),
+                      Text(
+                          '미세먼지: ${_currentAirQuality!.pm10.toStringAsFixed(0)}㎍/㎥ (${_getAirQualityStatus(_currentAirQuality!.pm10)})'),
+                      Text(
+                          '초미세먼지: ${_currentAirQuality!.pm25.toStringAsFixed(0)}㎍/㎥'),
                     ],
                   ),
                 ),
@@ -2338,12 +2386,15 @@ if (response.statusCode == 200) {
                 Navigator.of(context).pop();
                 _handleVentilationAction(analysis.shouldOpenWindow);
               },
-              icon: Icon(analysis.shouldOpenWindow ? Icons.window : Icons.window_outlined),
+              icon: Icon(analysis.shouldOpenWindow
+                  ? Icons.window
+                  : Icons.window_outlined),
               label: Text(analysis.shouldOpenWindow ? '창문 열기' : '창문 닫기'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: analysis.color,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
             ),
           ],
@@ -2392,7 +2443,8 @@ if (response.statusCode == 200) {
         Icon(icon, color: color, size: 24),
         const SizedBox(height: 4),
         Text(label, style: const TextStyle(fontSize: 12)),
-        Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: color)),
+        Text(value,
+            style: TextStyle(fontWeight: FontWeight.bold, color: color)),
       ],
     );
   }
@@ -2439,13 +2491,15 @@ if (response.statusCode == 200) {
                   children: [
                     const Text(
                       '지역을 선택하세요',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
                     Expanded(
                       child: GridView.builder(
                         itemCount: allLocations.length,
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           mainAxisSpacing: 10,
                           crossAxisSpacing: 10,
@@ -2463,29 +2517,38 @@ if (response.statusCode == 200) {
                             borderRadius: BorderRadius.circular(12),
                             child: Container(
                               decoration: BoxDecoration(
-                                color: isSelected ? Colors.blue.shade50 : Colors.grey.shade100,
+                                color: isSelected
+                                    ? Colors.blue.shade50
+                                    : Colors.grey.shade100,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: isSelected ? Colors.blue : Colors.transparent,
+                                  color: isSelected
+                                      ? Colors.blue
+                                      : Colors.transparent,
                                   width: 2,
                                 ),
                               ),
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Flexible(
                                     child: Text(
                                       entry.value,
                                       style: TextStyle(
                                         fontWeight: FontWeight.w600,
-                                        color: isSelected ? Colors.blue : Colors.black,
+                                        color: isSelected
+                                            ? Colors.blue
+                                            : Colors.black,
                                       ),
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                   if (isSelected)
-                                    const Icon(Icons.favorite, color: Colors.blue, size: 18),
+                                    const Icon(Icons.favorite,
+                                        color: Colors.blue, size: 18),
                                 ],
                               ),
                             ),
@@ -2541,15 +2604,16 @@ if (response.statusCode == 200) {
         (_currentWeather!.skyCondition?.contains('비') == true) ||
         (_currentWeather!.skyCondition?.contains('눈') == true);
 
-    bool extremeTemperature = _currentWeather!.temperature < 5 ||
-        _currentWeather!.temperature > 30;
+    bool extremeTemperature =
+        _currentWeather!.temperature < 5 || _currentWeather!.temperature > 30;
 
-    bool highDust = _currentAirQuality!.pm10 > 80 ||
-        _currentAirQuality!.pm25 > 35;
+    bool highDust =
+        _currentAirQuality!.pm10 > 80 || _currentAirQuality!.pm25 > 35;
 
     bool isNightTime = hour < 6 || hour >= 22;
 
-    _isVentilationRecommended = !badWeather && !extremeTemperature && !highDust && !isNightTime;
+    _isVentilationRecommended =
+        !badWeather && !extremeTemperature && !highDust && !isNightTime;
 
     if (isNightTime) {
       _ventilationMessage = "늦은 밤에는 환기를 삼가는 것이 좋아요.";
@@ -2568,9 +2632,7 @@ if (response.statusCode == 200) {
 
   // 환기 버튼 액션 메서드
   void _handleVentilationAction(bool openWindow) async {
-    String message = openWindow
-        ? "창문을 열어 환기를 시작합니다."
-        : "창문을 닫습니다.";
+    String message = openWindow ? "창문을 열어 환기를 시작합니다." : "창문을 닫습니다.";
 
     // 사용자에게 메시지 표시
     ScaffoldMessenger.of(context).showSnackBar(
@@ -2591,18 +2653,16 @@ if (response.statusCode == 200) {
     );
 
     // 백엔드 서버의 API 주소
-    final uri = Uri.parse(
-      openWindow
+    final uri = Uri.parse(openWindow
         ? "https://5912-113-198-180-200.ngrok-free.app/iot/send/open"
-        : "https://5912-113-198-180-200.ngrok-free.app/iot/send/close"
-    );
+        : "https://5912-113-198-180-200.ngrok-free.app/iot/send/close");
 
     try {
       final response = await http.post(uri);
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         print("✅ 명령 전송 성공: ${responseData['message']}");
-        
+
         // 성공 시 추가 피드백
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2639,12 +2699,13 @@ if (response.statusCode == 200) {
 
     try {
       final weather = await _apiService.getCurrentWeather(_currentLocation);
-      final airQuality = await _apiService.getCurrentAirQuality(_currentLocation);
+      final airQuality =
+          await _apiService.getCurrentAirQuality(_currentLocation);
       setState(() {
         _currentWeather = weather;
         _currentAirQuality = airQuality;
         _isLoading = false;
-        
+
         // 환기 권장 여부 계산 추가
         _calculateVentilationStatus();
       });
@@ -2666,47 +2727,52 @@ if (response.statusCode == 200) {
         actions: [
           // 센서 모니터링 토글 버튼
           IconButton(
-  icon: Icon(
-    _isMonitoringActive ? Icons.sensors : Icons.sensors_off,
-    color: _isMonitoringActive ? Colors.green : Colors.grey,
-  ),
-  onPressed: () {
-    setState(() {
-      // 모니터링 상태 토글
-      _isMonitoringActive = !_isMonitoringActive;
-
-      if (_isMonitoringActive) {
-        // 다시 켤 때 더미 팝업 플래그 초기화
-        _dummyPopupShown = false;
-        // 더미 팝업 띄우기
-        if (_useDummySensorData) {
-          _triggerDummySensorPopup();
-        }
-      }
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(
+            icon: Icon(
               _isMonitoringActive ? Icons.sensors : Icons.sensors_off,
-              color: Colors.white,
+              color: _isMonitoringActive ? Colors.green : Colors.grey,
             ),
-            const SizedBox(width: 8),
-            Text(
-              _isMonitoringActive ? '스마트 모니터링 활성화됨' : '스마트 모니터링 비활성화됨',
-            ),
-          ],
-        ),
-        backgroundColor: _isMonitoringActive ? Colors.green : Colors.grey,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  },
-),
+            onPressed: () {
+              setState(() {
+                // 모니터링 상태 토글
+                _isMonitoringActive = !_isMonitoringActive;
 
-          IconButton(icon: const Icon(Icons.location_on), onPressed: _showLocationSelectionDialog),
+                if (_isMonitoringActive) {
+                  // 다시 켤 때 더미 팝업 플래그 초기화
+                  _dummyPopupShown = false;
+                  // 더미 팝업 띄우기
+                  if (_useDummySensorData) {
+                    _triggerDummySensorPopup();
+                  }
+                }
+              });
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      Icon(
+                        _isMonitoringActive ? Icons.sensors : Icons.sensors_off,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _isMonitoringActive
+                            ? '스마트 모니터링 활성화됨'
+                            : '스마트 모니터링 비활성화됨',
+                      ),
+                    ],
+                  ),
+                  backgroundColor:
+                      _isMonitoringActive ? Colors.green : Colors.grey,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
+          ),
+
+          IconButton(
+              icon: const Icon(Icons.location_on),
+              onPressed: _showLocationSelectionDialog),
           IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
         ],
       ),
@@ -2717,7 +2783,8 @@ if (response.statusCode == 200) {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                      const Icon(Icons.error_outline,
+                          size: 64, color: Colors.red),
                       const SizedBox(height: 16),
                       Text(_error!, textAlign: TextAlign.center),
                       const SizedBox(height: 16),
@@ -2748,12 +2815,14 @@ if (response.statusCode == 200) {
                                     color: Colors.blue.shade100,
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: const Icon(Icons.person, size: 24, color: Colors.blue),
+                                  child: const Icon(Icons.person,
+                                      size: 24, color: Colors.blue),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         '안녕하세요, $_username님!',
@@ -2777,7 +2846,7 @@ if (response.statusCode == 200) {
                           ),
                         ),
                       const SizedBox(height: 16),
-                      
+
                       // 실시간 센서 상태 카드 (개선됨)
                       if (_lastSensorData != null)
                         Card(
@@ -2790,7 +2859,9 @@ if (response.statusCode == 200) {
                               borderRadius: BorderRadius.circular(16),
                               gradient: LinearGradient(
                                 colors: [
-                                  _isMonitoringActive ? Colors.green.shade50 : Colors.grey.shade50,
+                                  _isMonitoringActive
+                                      ? Colors.green.shade50
+                                      : Colors.grey.shade50,
                                   Colors.white,
                                 ],
                                 begin: Alignment.topLeft,
@@ -2807,11 +2878,16 @@ if (response.statusCode == 200) {
                                       Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: _isMonitoringActive ? Colors.green : Colors.grey,
-                                          borderRadius: BorderRadius.circular(8),
+                                          color: _isMonitoringActive
+                                              ? Colors.green
+                                              : Colors.grey,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                         ),
                                         child: Icon(
-                                          _isMonitoringActive ? Icons.sensors : Icons.sensors_off,
+                                          _isMonitoringActive
+                                              ? Icons.sensors
+                                              : Icons.sensors_off,
                                           color: Colors.white,
                                           size: 20,
                                         ),
@@ -2819,7 +2895,8 @@ if (response.statusCode == 200) {
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             const Text(
                                               '실시간 센서 모니터링',
@@ -2842,7 +2919,7 @@ if (response.statusCode == 200) {
                                   ),
                                   const SizedBox(height: 20),
                                   _buildSensorStatusRow(),
-                                  
+
                                   // 센서 히스토리 미니 차트 (선택적)
                                   if (_sensorHistory.length >= 3) ...[
                                     const SizedBox(height: 16),
@@ -2864,7 +2941,7 @@ if (response.statusCode == 200) {
                           ),
                         ),
                       const SizedBox(height: 16),
-                      
+
                       // 날씨 카드
                       if (_currentWeather != null)
                         InkWell(
@@ -2872,15 +2949,16 @@ if (response.statusCode == 200) {
                           child: WeatherCard(weather: _currentWeather!),
                         ),
                       const SizedBox(height: 16),
-                      
+
                       // 공기질 카드
                       if (_currentAirQuality != null)
                         InkWell(
                           onTap: _navigateToAirQualityDetail,
-                          child: AirQualityCard(airQuality: _currentAirQuality!),
+                          child:
+                              AirQualityCard(airQuality: _currentAirQuality!),
                         ),
                       const SizedBox(height: 16),
-                      
+
                       // 스마트 환기 권장 카드 (개선됨)
                       if (_currentWeather != null && _currentAirQuality != null)
                         Card(
@@ -2888,7 +2966,9 @@ if (response.statusCode == 200) {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                             side: BorderSide(
-                              color: _isVentilationRecommended ? Colors.green : Colors.orange,
+                              color: _isVentilationRecommended
+                                  ? Colors.green
+                                  : Colors.orange,
                               width: 2,
                             ),
                           ),
@@ -2897,7 +2977,10 @@ if (response.statusCode == 200) {
                               borderRadius: BorderRadius.circular(16),
                               gradient: LinearGradient(
                                 colors: [
-                                  (_isVentilationRecommended ? Colors.green : Colors.orange).withOpacity(0.1),
+                                  (_isVentilationRecommended
+                                          ? Colors.green
+                                          : Colors.orange)
+                                      .withOpacity(0.1),
                                   Colors.white,
                                 ],
                                 begin: Alignment.topLeft,
@@ -2914,11 +2997,16 @@ if (response.statusCode == 200) {
                                       Container(
                                         padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
-                                          color: _isVentilationRecommended ? Colors.green : Colors.orange,
-                                          borderRadius: BorderRadius.circular(12),
+                                          color: _isVentilationRecommended
+                                              ? Colors.green
+                                              : Colors.orange,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                         ),
                                         child: Icon(
-                                          _isVentilationRecommended ? Icons.window : Icons.window_outlined,
+                                          _isVentilationRecommended
+                                              ? Icons.window
+                                              : Icons.window_outlined,
                                           color: Colors.white,
                                           size: 24,
                                         ),
@@ -2926,14 +3014,19 @@ if (response.statusCode == 200) {
                                       const SizedBox(width: 16),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              _isVentilationRecommended ? '✅ 환기 권장' : '⚠️ 창문 닫기 권장',
+                                              _isVentilationRecommended
+                                                  ? '✅ 환기 권장'
+                                                  : '⚠️ 창문 닫기 권장',
                                               style: TextStyle(
                                                 fontSize: 20,
                                                 fontWeight: FontWeight.bold,
-                                                color: _isVentilationRecommended ? Colors.green.shade700 : Colors.orange.shade700,
+                                                color: _isVentilationRecommended
+                                                    ? Colors.green.shade700
+                                                    : Colors.orange.shade700,
                                               ),
                                             ),
                                             const SizedBox(height: 4),
@@ -2950,13 +3043,14 @@ if (response.statusCode == 200) {
                                     ],
                                   ),
                                   const SizedBox(height: 16),
-                                  
+
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.grey.shade200),
+                                      border: Border.all(
+                                          color: Colors.grey.shade200),
                                     ),
                                     child: Text(
                                       _ventilationMessage,
@@ -2968,40 +3062,64 @@ if (response.statusCode == 200) {
                                     ),
                                   ),
                                   const SizedBox(height: 20),
-                                  
+
                                   // 창문 제어 버튼들
                                   Row(
                                     children: [
                                       Expanded(
                                         child: ElevatedButton.icon(
-                                          onPressed: () => _handleVentilationAction(true),
-                                          icon: const Icon(Icons.window, size: 20),
-                                          label: const Text('창문 열기', style: TextStyle(fontWeight: FontWeight.bold)),
+                                          onPressed: () =>
+                                              _handleVentilationAction(true),
+                                          icon: const Icon(Icons.window,
+                                              size: 20),
+                                          label: const Text('창문 열기',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold)),
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: _isVentilationRecommended ? Colors.green : Colors.grey.shade400,
+                                            backgroundColor:
+                                                _isVentilationRecommended
+                                                    ? Colors.green
+                                                    : Colors.grey.shade400,
                                             foregroundColor: Colors.white,
-                                            padding: const EdgeInsets.symmetric(vertical: 16),
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 16),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(12),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
                                             ),
-                                            elevation: _isVentilationRecommended ? 3 : 1,
+                                            elevation: _isVentilationRecommended
+                                                ? 3
+                                                : 1,
                                           ),
                                         ),
                                       ),
                                       const SizedBox(width: 16),
                                       Expanded(
                                         child: ElevatedButton.icon(
-                                          onPressed: () => _handleVentilationAction(false),
-                                          icon: const Icon(Icons.window_outlined, size: 20),
-                                          label: const Text('창문 닫기', style: TextStyle(fontWeight: FontWeight.bold)),
+                                          onPressed: () =>
+                                              _handleVentilationAction(false),
+                                          icon: const Icon(
+                                              Icons.window_outlined,
+                                              size: 20),
+                                          label: const Text('창문 닫기',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold)),
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: !_isVentilationRecommended ? Colors.orange : Colors.grey.shade400,
+                                            backgroundColor:
+                                                !_isVentilationRecommended
+                                                    ? Colors.orange
+                                                    : Colors.grey.shade400,
                                             foregroundColor: Colors.white,
-                                            padding: const EdgeInsets.symmetric(vertical: 16),
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 16),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(12),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
                                             ),
-                                            elevation: !_isVentilationRecommended ? 3 : 1,
+                                            elevation:
+                                                !_isVentilationRecommended
+                                                    ? 3
+                                                    : 1,
                                           ),
                                         ),
                                       ),
@@ -3012,7 +3130,7 @@ if (response.statusCode == 200) {
                             ),
                           ),
                         ),
-                      
+
                       const SizedBox(height: 32),
                     ],
                   ),
@@ -3030,7 +3148,8 @@ if (response.statusCode == 200) {
                   SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
                   ),
                   SizedBox(width: 12),
                   Text('데이터 새로고침 중...'),
@@ -3040,7 +3159,7 @@ if (response.statusCode == 200) {
           );
 
           final success = await _apiService.triggerManualFetch();
-          
+
           if (success) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -3084,7 +3203,7 @@ if (response.statusCode == 200) {
   String _formatTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
-    
+
     if (difference.inMinutes < 1) {
       return '방금 전';
     } else if (difference.inMinutes < 60) {
@@ -3098,7 +3217,7 @@ if (response.statusCode == 200) {
 
   Widget _buildMiniTrendChart() {
     if (_sensorHistory.length < 3) return const SizedBox();
-    
+
     return Container(
       height: 60,
       padding: const EdgeInsets.all(8),
@@ -3109,8 +3228,10 @@ if (response.statusCode == 200) {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildTrendItem('조도', _sensorHistory.take(5).map((e) => e.light ?? 0).toList()),
-          _buildTrendItem('공기질', _sensorHistory.take(5).map((e) => e.gas ?? 0).toList()),
+          _buildTrendItem(
+              '조도', _sensorHistory.take(5).map((e) => e.light ?? 0).toList()),
+          _buildTrendItem(
+              '공기질', _sensorHistory.take(5).map((e) => e.gas ?? 0).toList()),
         ],
       ),
     );
@@ -3118,19 +3239,22 @@ if (response.statusCode == 200) {
 
   Widget _buildTrendItem(String label, List<int> values) {
     if (values.isEmpty) return const SizedBox();
-    
+
     final maxValue = values.reduce((a, b) => a > b ? a : b);
     final minValue = values.reduce((a, b) => a < b ? a : b);
     final range = maxValue - minValue;
-    
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+        Text(label,
+            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
         Row(
           children: values.take(5).map((value) {
-            final normalizedHeight = range > 0 ? ((value - minValue) / range * 20 + 5).toDouble() : 15.0;
+            final normalizedHeight = range > 0
+                ? ((value - minValue) / range * 20 + 5).toDouble()
+                : 15.0;
             return Container(
               width: 4,
               height: normalizedHeight,

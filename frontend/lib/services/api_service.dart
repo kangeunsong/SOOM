@@ -12,44 +12,85 @@ class ApiService {
   static const String baseUrl = 'https://5912-113-198-180-200.ngrok-free.app';
 
   // static const String baseUrl = 'http://10.0.2.2:8000';
-  String? lastErrorMessage;
-  Future<bool> signup(String username, String email, String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/token'),
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
-          'Content-Type': 'application/x-www-form-urlencoded', // 필요시
-        },
-        body: jsonEncode({
-          'username': username,
-          'email': email,
-          'password': password,
-        }),
-      );
+   String? lastErrorMessage;
+  // Future<bool> signup(String username, String email, String password) async {
+  //   try {
+  //     final response = await http.post(
+  //       Uri.parse('$baseUrl/token'),
+  //       headers: {
+  //         'ngrok-skip-browser-warning': 'true',
+  //         'Content-Type': 'application/x-www-form-urlencoded', // 필요시
+  //       },
+  //       body: jsonEncode({
+  //         'username': username,
+  //         'email': email,
+  //         'password': password,
+  //       }),
+  //     );
 
-      print('회원가입 응답: ${response.statusCode} - ${response.body}');
+  //     print('회원가입 응답: ${response.statusCode} - ${response.body}');
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return true;
-      } else {
-        Map<String, dynamic> responseBody = {};
-        try {
-          responseBody = jsonDecode(response.body);
-        } catch (e) {
-          // JSON이 아닌 경우
-        }
+  //     if (response.statusCode == 200 || response.statusCode == 201) {
+  //       return true;
+  //     } else {
+  //       Map<String, dynamic> responseBody = {};
+  //       try {
+  //         responseBody = jsonDecode(response.body);
+  //       } catch (e) {
+  //         // JSON이 아닌 경우
+  //       }
 
-        lastErrorMessage = responseBody['detail'] ?? '회원가입 실패: 알 수 없는 오류';
-        return false;
+  //       lastErrorMessage = responseBody['detail'] ?? '회원가입 실패: 알 수 없는 오류';
+  //       return false;
+  //     }
+  //   } catch (e) {
+  //     print('회원가입 중 예외 발생: $e');
+  //     lastErrorMessage = '네트워크 오류: $e';
+  //     return false;
+  //   }
+  // }
+Future<bool> signup(String username, String email, String password) async {
+  try {
+    final response = await http.post(
+      Uri.parse('$baseUrl/signup'), // /token → /signup으로 변경
+      headers: {
+        'ngrok-skip-browser-warning': 'true',
+        'Content-Type': 'application/json', // JSON으로 변경
+      },
+      body: jsonEncode({
+        'username': username,
+        'email': email,
+        'password': password,
+      }),
+    );
+
+    print('회원가입 응답: ${response.statusCode} - ${response.body}');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return true;
+    } else {
+      Map<String, dynamic> responseBody = {};
+      try {
+        responseBody = jsonDecode(response.body);
+      } catch (e) {
+        // JSON이 아닌 경우
       }
-    } catch (e) {
-      print('회원가입 중 예외 발생: $e');
-      lastErrorMessage = '네트워크 오류: $e';
+
+      // detail이 배열인 경우 처리
+      if (responseBody['detail'] is List) {
+        List<dynamic> errors = responseBody['detail'];
+        lastErrorMessage = errors.map((e) => e['msg'] ?? '').join(', ');
+      } else {
+        lastErrorMessage = responseBody['detail']?.toString() ?? '회원가입 실패: 알 수 없는 오류';
+      }
       return false;
     }
+  } catch (e) {
+    print('회원가입 중 예외 발생: $e');
+    lastErrorMessage = '네트워크 오류: $e';
+    return false;
   }
-
+}
   // 로그인 메서드
   Future<bool> login(String username, String password) async {
     try {

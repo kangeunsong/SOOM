@@ -10,3 +10,5 @@ frontend/.env
 # 가상환경
 venv/
 .env
+
+apikey.txt

@@ -1,4 +1,4 @@
-from api import iot
+from backend.api import iot
 from api import fetch, weather, dust
 from api.chatGPT_API import callChatGPT
 from fastapi import FastAPI, Depends, HTTPException, status

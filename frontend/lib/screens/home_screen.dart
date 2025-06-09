@@ -2155,7 +2155,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                       Expanded(
                                         child: ElevatedButton.icon(
                                           onPressed: () =>
-                                              _handleVentilationAction(true),
+                                              // _handleVentilationAction(true),
+                                              Navigator.push(
+                                            // 임시로 대화페이지 넘어가게
+                                            context,
+                                            MaterialPageRoute(
+                                                builder: (context) =>
+                                                    SoomiScreen()),
+                                          ),
                                           icon: const Icon(Icons.window,
                                               size: 20),
                                           label: const Text('창문 열기',

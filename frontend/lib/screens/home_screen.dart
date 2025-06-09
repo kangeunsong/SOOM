@@ -95,9 +95,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _error;
   bool _isVentilationRecommended = false;
   String _ventilationMessage = "";
-  bool _useDummySensorData = true;
+
   // HomeScreen State 클래스 내에 선언
-  bool _dummyPopupShown = false; // 더미 데이터 팝업 표시 여부
+
   bool _realPopupShown = false; // 실제 데이터 팝업 표시 여부
 
   // 센서 관련 변수들
@@ -114,9 +114,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 센서 임계값 설정 (더 세밀하게 조정)
   static const int LIGHT_THRESHOLD_DARK = 150; // 어두워지는 기준 (낮아짐)
-  static const int LIGHT_THRESHOLD_BRIGHT = 400; // 밝아지는 기준 (높아짐)
-  static const int LIGHT_CHANGE_THRESHOLD = 100; // 급격한 조도 변화 기준
-
+  // static const int LIGHT_THRESHOLD_BRIGHT = 400; // 밝아지는 기준 (높아짐)
+  // static const int LIGHT_CHANGE_THRESHOLD = 100; // 급격한 조도 변화 기준
+static const int LIGHT_DIGITAL_DARK = 0;    // 어두움
+static const int LIGHT_DIGITAL_BRIGHT = 1;  // 밝음
   static const int GAS_THRESHOLD_HIGH = 300; // 가스 농도 높음 기준 (낮춤)
   static const int GAS_THRESHOLD_NORMAL = 100; // 가스 농도 정상 기준
   static const int GAS_CHANGE_THRESHOLD = 50; // 급격한 가스 변화 기준
@@ -423,29 +424,6 @@ bool _calculateOptimalActionForOccupancy(SensorData current) {
     }
   }
 
-  void _triggerDummySensorPopup() {
-    if (_dummyPopupShown) return; // 이미 한 번 띄운 뒤에는 무시
-    _dummyPopupShown = true;
-
-    final dummyOld = SensorData(
-      deviceId: 'dummy',
-      pir: 0,
-      light: LIGHT_THRESHOLD_BRIGHT + 50,
-      gas: GAS_THRESHOLD_NORMAL - 20,
-      timestamp: DateTime.now().subtract(const Duration(seconds: 10)),
-    );
-    final dummyCurrent = SensorData(
-      deviceId: 'dummy',
-      pir: 1,
-      light: LIGHT_THRESHOLD_DARK - 50,
-      gas: GAS_THRESHOLD_HIGH + 100,
-      timestamp: DateTime.now(),
-    );
-    final analysis = _analyzeSensorChanges(dummyOld, dummyCurrent);
-    if (analysis != null) {
-      _showSmartVentilationPopup(analysis);
-    }
-  }
 
   // 센서 모니터링 시작
   void _startSensorMonitoring() {
@@ -455,50 +433,47 @@ bool _calculateOptimalActionForOccupancy(SensorData current) {
       }
     });
   }
+// 센서 데이터 확인 및 팝업 트리거
+Future<void> _checkSensorData() async {
+  try {
+    final response = await http.get(
+      Uri.parse(
+          'https://5912-113-198-180-200.ngrok-free.app/iot/data/latest'),
+      headers: {'Content-Type': 'application/json'},
+    );
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final newSensorData = SensorData.fromJson(data);
 
-  // 센서 데이터 확인 및 팝업 트리거
-  Future<void> _checkSensorData() async {
-    try {
-      final response = await http.get(
-        Uri.parse(
-            'https://5912-113-198-180-200.ngrok-free.app/iot/data/latest'),
-        headers: {'Content-Type': 'application/json'},
-      );
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final newSensorData = SensorData.fromJson(data);
-
-        setState(() {
-          _previousSensorData = _lastSensorData;
-          _lastSensorData = newSensorData;
-          _sensorHistory.insert(0, newSensorData);
-          if (_sensorHistory.length > 20) {
-            _sensorHistory = _sensorHistory.take(20).toList();
-          }
-        });
-
-        if (_previousSensorData != null) {
-          final analysis =
-              _analyzeSensorChanges(_previousSensorData!, newSensorData);
-          // 팝업이 필요하고 아직 띄우지 않았다면
-          if (analysis != null && !_realPopupShown) {
-            _realPopupShown = true;
-            _showSmartVentilationPopup(analysis);
-          }
-          // 분석 결과가 없으면(정상 상태), 다음 이벤트를 위해 플래그 초기화
-          if (analysis == null && _realPopupShown) {
-            _realPopupShown = false;
-          }
+      setState(() {
+        _previousSensorData = _lastSensorData;
+        _lastSensorData = newSensorData;
+        _sensorHistory.insert(0, newSensorData);
+        if (_sensorHistory.length > 20) {
+          _sensorHistory = _sensorHistory.take(20).toList();
         }
-      } else {
-        print('센서 데이터 조회 실패: ${response.statusCode}');
-        if (_useDummySensorData) _triggerDummySensorPopup();
+      });
+
+      if (_previousSensorData != null) {
+        final analysis =
+            _analyzeSensorChanges(_previousSensorData!, newSensorData);
+        // 팝업이 필요하고 아직 띄우지 않았다면
+        if (analysis != null && !_realPopupShown) {
+          _realPopupShown = true;
+          _showSmartVentilationPopup(analysis);
+        }
+        // 분석 결과가 없으면(정상 상태), 다음 이벤트를 위해 플래그 초기화
+        if (analysis == null && _realPopupShown) {
+          _realPopupShown = false;
+        }
       }
-    } catch (e) {
-      print('센서 데이터 확인 오류: $e');
-      if (_useDummySensorData) _triggerDummySensorPopup();
+    } else {
+      print('센서 데이터 조회 실패: ${response.statusCode}');
     }
+  } catch (e) {
+    print('센서 데이터 확인 오류: $e');
   }
+}
 SensorAnalysis? _analyzeSensorChanges(SensorData old, SensorData current) {
   // 1. 급격한 가스 농도 증가 (최우선 - 즉시 창문 열기)
   if (old.gas != null && current.gas != null) {
@@ -547,40 +522,38 @@ SensorAnalysis? _analyzeSensorChanges(SensorData old, SensorData current) {
     }
   }
 
-  // 2. 조도 변화 기반 시간대 분석
-  if (old.light != null && current.light != null) {
-    int lightChange = current.light! - old.light!;
-
-    // 급격히 어두워짐 (저녁/밤) - 창문 닫기
-    if (lightChange < -LIGHT_CHANGE_THRESHOLD && current.light! < LIGHT_THRESHOLD_DARK) {
-      if (_shouldCloseWindowAtNight()) {
-        if (_autoControlEnabled && _shouldPerformAutoAction()) {
-          Future.microtask(() => _performAutoWindowControl(false, "야간 시간대"));
-        }
-        return SensorAnalysis(
-          shouldOpenWindow: false,
-          reason: "🌙 어두워졌습니다.\n${_getCloseWindowReason()}\n창문을 닫는 것을 권장합니다.",
-          urgency: "medium",
-          color: Colors.blue,
-        );
+ // 기존 조도 변화 분석 부분을 다음과 같이 교체:
+if (old.light != null && current.light != null) {
+  // 어두워짐 감지 (1 → 0)
+  if (old.light == LIGHT_DIGITAL_BRIGHT && current.light == LIGHT_DIGITAL_DARK) {
+    if (_shouldCloseWindowAtNight()) {
+      if (_autoControlEnabled && _shouldPerformAutoAction()) {
+        Future.microtask(() => _performAutoWindowControl(false, "야간 시간대"));
       }
-    }
-
-    // 급격히 밝아짐 (아침) - 조건부 창문 열기
-    else if (lightChange > LIGHT_CHANGE_THRESHOLD && current.light! > LIGHT_THRESHOLD_BRIGHT) {
-      if (_shouldOpenWindowInMorning(current)) {
-        if (_autoControlEnabled && _shouldPerformAutoAction()) {
-          Future.microtask(() => _performAutoWindowControl(true, "아침 환기"));
-        }
-        return SensorAnalysis(
-          shouldOpenWindow: true,
-          reason: "☀️ 밝아졌습니다!\n실내 공기질이 양호하고 환기하기 좋은 시간입니다.\n신선한 공기를 위해 창문을 여는 것을 권장합니다.",
-          urgency: "low",
-          color: Colors.green,
-        );
-      }
+      return SensorAnalysis(
+        shouldOpenWindow: false,
+        reason: "🌙 어두워졌습니다.\n${_getCloseWindowReason()}\n창문을 닫는 것을 권장합니다.",
+        urgency: "medium",
+        color: Colors.blue,
+      );
     }
   }
+  
+  // 밝아짐 감지 (0 → 1)
+  else if (old.light == LIGHT_DIGITAL_DARK && current.light == LIGHT_DIGITAL_BRIGHT) {
+    if (_shouldOpenWindowInMorning(current)) {
+      if (_autoControlEnabled && _shouldPerformAutoAction()) {
+        Future.microtask(() => _performAutoWindowControl(true, "아침 환기"));
+      }
+      return SensorAnalysis(
+        shouldOpenWindow: true,
+        reason: "☀️ 밝아졌습니다!\n실내 공기질이 양호하고 환기하기 좋은 시간입니다.\n신선한 공기를 위해 창문을 여는 것을 권장합니다.",
+        urgency: "low",
+        color: Colors.green,
+      );
+    }
+  }
+}
 
 // 3. 움직임 감지 시 적응형 제어 (완전히 개선된 버전)
 if (old.pir != current.pir && current.pir == 1) {
@@ -824,7 +797,7 @@ void _toggleAutoControl() {
           ),
         ],
       ),
-      backgroundColor: _autoControlEnabled ? Colors.blue : Colors.grey,
+      backgroundColor: _autoControlEnabled ? Colors.white : Colors.grey,
       duration: const Duration(seconds: 2),
     ),
   );
@@ -1010,22 +983,78 @@ void _toggleAutoControl() {
     );
   }
 // _buildSensorStatusRow() 함수를 완전히 새로 작성:
-
+// _buildMiniTrendChart() 함수 아래에 추가
+Widget _buildModernSensorCard({
+  required IconData icon,
+  required String label,
+  required String value,
+  required Color color,
+  required Color bgColor,
+  bool isFullWidth = false,
+}) {
+  return Container(
+    width: isFullWidth ? double.infinity : null,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: bgColor,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, color: color, size: 24),
+            const Spacer(),
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade600,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
+    ),
+  );
+}
 Widget _buildSensorStatusRow() {
   return SizedBox(
 
     child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        if (_lastSensorData!.light != null)
-          Expanded(
-            child: _buildCompactSensorItem(
-              icon: Icons.lightbulb,
-              label: '조도',
-              value: _lastSensorData!.light.toString(),
-              color: _getLightColor(_lastSensorData!.light!),
-            ),
-          ),
+      // _buildCompactSensorItem에서 조도 값 표시 수정
+if (_lastSensorData!.light != null)
+  Expanded(
+    child: _buildCompactSensorItem(
+      icon: Icons.lightbulb,
+      label: '조도',
+      value: _lastSensorData!.light == 1 ? '밝음' : '어두움', // 숫자 대신 텍스트로 표시
+      color: _getLightColor(_lastSensorData!.light!),
+    ),
+  ),
         if (_lastSensorData!.gas != null)
           Expanded(
             child: _buildCompactSensorItem(
@@ -1288,11 +1317,11 @@ Widget _buildSensorStatusRowScrollable() {
   );
 }
 
-  Color _getLightColor(int light) {
-    if (light < LIGHT_THRESHOLD_DARK) return Colors.indigo;
-    if (light > LIGHT_THRESHOLD_BRIGHT) return Colors.amber;
-    return Colors.orange;
-  }
+Color _getLightColor(int light) {
+  if (light == LIGHT_DIGITAL_DARK) return Colors.indigo;  // 어두움
+  if (light == LIGHT_DIGITAL_BRIGHT) return Colors.amber; // 밝음
+  return Colors.grey; // 기본값
+}
 
   Color _getGasColor(int gas) {
     if (gas > GAS_THRESHOLD_HIGH) return Colors.red;
@@ -1575,14 +1604,7 @@ Widget _buildSensorStatusRowScrollable() {
                 // 모니터링 상태 토글
                 _isMonitoringActive = !_isMonitoringActive;
 
-                if (_isMonitoringActive) {
-                  // 다시 켤 때 더미 팝업 플래그 초기화
-                  _dummyPopupShown = false;
-                  // 더미 팝업 띄우기
-                  if (_useDummySensorData) {
-                    _triggerDummySensorPopup();
-                  }
-                }
+        
               });
 
               ScaffoldMessenger.of(context).showSnackBar(
@@ -1685,104 +1707,316 @@ Widget _buildSensorStatusRowScrollable() {
                           ),
                         ),
                       const SizedBox(height: 16),
-
-                      // 실시간 센서 상태 카드 (개선됨)
-                      if (_lastSensorData != null)
-                        Card(
-                          elevation: 3,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              gradient: LinearGradient(
-                                colors: [
-                                  _isMonitoringActive
-                                      ? Colors.green.shade50
-                                      : Colors.grey.shade50,
-                                  Colors.white,
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(20.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: _isMonitoringActive
-                                              ? Colors.green
-                                              : Colors.grey,
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        child: Icon(
-                                          _isMonitoringActive
-                                              ? Icons.sensors
-                                              : Icons.sensors_off,
-                                          color: Colors.white,
-                                          size: 20,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            const Text(
-                                              '실시간 센서 모니터링',
-                                              style: TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            Text(
-                                              '마지막 업데이트: ${_formatTime(_lastSensorData!.timestamp)}',
-                                              style: TextStyle(
-                                                color: Colors.grey.shade600,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 20),
-                                  SizedBox(
-
-  child: _buildSensorStatusRow(),
+// 실시간 센서 상태 카드 (완전히 새로 디자인됨)
+if (_lastSensorData != null)
+  Card(
+    elevation: 4,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+    gradient: LinearGradient(
+  colors: [
+    _isMonitoringActive ? Colors.green.shade50 : Colors.grey.shade50,
+    Colors.white,
+  ],
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
 ),
-
-                                  // 센서 히스토리 미니 차트 (선택적)
-                                  if (_sensorHistory.length >= 3) ...[
-                                    const SizedBox(height: 16),
-                                    const Divider(),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      '최근 변화 추이',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.grey.shade700,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    _buildMiniTrendChart(),
-                                  ],
-                                ],
-                              ),
-                            ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 헤더 부분
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                 decoration: BoxDecoration(
+  color: _isMonitoringActive ? Colors.green : Colors.grey,
+  borderRadius: BorderRadius.circular(8),
+),
+                  child: Icon(
+                    _isMonitoringActive ? Icons.sensors : Icons.sensors_off,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '실시간 센서 모니터링',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _isMonitoringActive 
+                            ? Colors.green.withOpacity(0.3) 
+                            : Colors.red.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _isMonitoringActive ? Colors.green : Colors.red,
+                            width: 1,
                           ),
                         ),
-                      const SizedBox(height: 10),
+                    // 변경할 코드:
+child: Text(
+  _isMonitoringActive ? '🟢 활성화' : '🔴 비활성화',
+  style: TextStyle(
+    color: _isMonitoringActive ? Colors.green.shade700 : Colors.red.shade700,
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+  ),
+),
+                      ),
+                    ],
+                  ),
+                ),
+                // 실시간 애니메이션 점
+                if (_isMonitoringActive)
+                  Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.white.withOpacity(0.5),
+                          blurRadius: 4,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+            
+            const SizedBox(height: 20),
+            
+            // 센서 데이터 카드들
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.schedule, color: Colors.grey, size: 16),
+                      const SizedBox(width: 8),
+                      Text(
+                        '마지막 업데이트: ${_formatTime(_lastSensorData!.timestamp)}',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // 센서 데이터 그리드
+                  Row(
+                    children: [
+                      // 조도 센서
+                      if (_lastSensorData!.light != null)
+                        Expanded(
+                          child: _buildModernSensorCard(
+                            icon: Icons.lightbulb_outline,
+                            label: '조도',
+                            value: _lastSensorData!.light == 1 ? '밝음' : '어두움',
+                            color: _getLightColor(_lastSensorData!.light!),
+                            bgColor: _getLightColor(_lastSensorData!.light!).withOpacity(0.1),
+                          ),
+                        ),
+                      
+                      if (_lastSensorData!.light != null && _lastSensorData!.gas != null)
+                        const SizedBox(width: 12),
+                      
+                      // 공기질 센서
+                      if (_lastSensorData!.gas != null)
+                        Expanded(
+                          child: _buildModernSensorCard(
+                            icon: Icons.air,
+                            label: '공기질',
+                            value: '${_lastSensorData!.gas}',
+                            color: _getGasColor(_lastSensorData!.gas!),
+                            bgColor: _getGasColor(_lastSensorData!.gas!).withOpacity(0.1),
+                          ),
+                        ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // PIR 센서 (전체 폭)
+                  if (_lastSensorData!.pir != null)
+                    _buildModernSensorCard(
+                      icon: _lastSensorData!.pir == 1 ? Icons.person : Icons.person_outline,
+                      label: '움직임 감지',
+                      value: _lastSensorData!.pir == 1 ? '감지됨' : '감지 안됨',
+                      color: _lastSensorData!.pir == 1 ? Colors.blue : Colors.grey,
+                      bgColor: (_lastSensorData!.pir == 1 ? Colors.blue : Colors.grey).withOpacity(0.1),
+                      isFullWidth: true,
+                    ),
+                ],
+              ),
+            ),
+
+            // 센서 히스토리 미니 차트 (개선됨)
+            if (_sensorHistory.length >= 3) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+               decoration: BoxDecoration(
+  color: Colors.grey.shade50,
+  borderRadius: BorderRadius.circular(12),
+  border: Border.all(color: Colors.grey.shade200),
+),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Text(
+  '📈 최근 변화 추이',
+  style: TextStyle(
+    fontWeight: FontWeight.bold,
+    color: Colors.grey.shade700,
+    fontSize: 16,
+  ),
+),
+                    const SizedBox(height: 12),
+                    _buildMiniTrendChart(),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    ),
+  ),
+const SizedBox(height: 16),
+                      // 실시간 센서 상태 카드 (개선됨)
+//                       if (_lastSensorData != null)
+//                         Card(
+//                           elevation: 3,
+//                           shape: RoundedRectangleBorder(
+//                             borderRadius: BorderRadius.circular(16),
+//                           ),
+//                           child: Container(
+//                             decoration: BoxDecoration(
+//                               borderRadius: BorderRadius.circular(16),
+//                               gradient: LinearGradient(
+//                                 colors: [
+//                                   _isMonitoringActive
+//                                       ? Colors.green.shade50
+//                                       : Colors.grey.shade50,
+//                                   Colors.white,
+//                                 ],
+//                                 begin: Alignment.topLeft,
+//                                 end: Alignment.bottomRight,
+//                               ),
+//                             ),
+//                             child: Padding(
+//                               padding: const EdgeInsets.all(20.0),
+//                               child: Column(
+//                                 crossAxisAlignment: CrossAxisAlignment.start,
+//                                 children: [
+//                                   Row(
+//                                     children: [
+//                                       Container(
+//                                         padding: const EdgeInsets.all(8),
+//                                         decoration: BoxDecoration(
+//                                           color: _isMonitoringActive
+//                                               ? Colors.green
+//                                               : Colors.grey,
+//                                           borderRadius:
+//                                               BorderRadius.circular(8),
+//                                         ),
+//                                         child: Icon(
+//                                           _isMonitoringActive
+//                                               ? Icons.sensors
+//                                               : Icons.sensors_off,
+//                                           color: Colors.white,
+//                                           size: 20,
+//                                         ),
+//                                       ),
+//                                       const SizedBox(width: 12),
+//                                       Expanded(
+//                                         child: Column(
+//                                           crossAxisAlignment:
+//                                               CrossAxisAlignment.start,
+//                                           children: [
+//                                             const Text(
+//                                               '실시간 센서 모니터링',
+//                                               style: TextStyle(
+//                                                 fontSize: 18,
+//                                                 fontWeight: FontWeight.bold,
+//                                               ),
+//                                             ),
+//                                             Text(
+//                                               '마지막 업데이트: ${_formatTime(_lastSensorData!.timestamp)}',
+//                                               style: TextStyle(
+//                                                 color: Colors.grey.shade600,
+//                                                 fontSize: 12,
+//                                               ),
+//                                             ),
+//                                           ],
+//                                         ),
+//                                       ),
+//                                     ],
+//                                   ),
+//                                   const SizedBox(height: 20),
+//                                   SizedBox(
+
+//   child: _buildSensorStatusRow(),
+// ),
+
+//                                   // 센서 히스토리 미니 차트 (선택적)
+//                                   if (_sensorHistory.length >= 3) ...[
+//                                     const SizedBox(height: 16),
+//                                     const Divider(),
+//                                     const SizedBox(height: 8),
+//                                     Text(
+//                                       '최근 변화 추이',
+//                                       style: TextStyle(
+//                                         fontWeight: FontWeight.w600,
+//                                         color: Colors.grey.shade700,
+//                                       ),
+//                                     ),
+//                                     const SizedBox(height: 8),
+//                                     _buildMiniTrendChart(),
+//                                   ],
+//                                 ],
+//                               ),
+//                             ),
+//                           ),
+//                         ),
+//                       const SizedBox(height: 10),
 
                       // 날씨 카드
                       if (_currentWeather != null)
@@ -2056,61 +2290,684 @@ Widget _buildSensorStatusRowScrollable() {
       return '${dateTime.month}/${dateTime.day} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
     }
   }
+List<Widget> _buildImprovedChartBars() {
+  final recentData = _sensorHistory.take(8).toList().reversed.toList();
 
-  Widget _buildMiniTrendChart() {
-    if (_sensorHistory.length < 3) return const SizedBox();
+  return recentData.asMap().entries.map((entry) {
+    final index = entry.key;
+    final data = entry.value;
+    final isLatest = index == recentData.length - 1;
 
-    return Container(
-      height: 80,
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(8),
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 1.5),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            // 움직임 감지 표시 (상단)
+            Flexible(
+              flex: 2,
+              child: Center(
+                child: Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: data.pir == 1 ? Colors.blue : Colors.grey.shade300,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: data.pir == 1 ? Colors.white : Colors.grey.shade400,
+                      width: 1.2,
+                    ),
+                    boxShadow: [
+                      if (data.pir == 1)
+                        BoxShadow(
+                          color: Colors.blue.withOpacity(0.3),
+                          blurRadius: 2,
+                          spreadRadius: 0.5,
+                        ),
+                    ],
+                  ),
+                  child: Icon(
+                    data.pir == 1 ? Icons.person : Icons.person_outline,
+                    color: data.pir == 1 ? Colors.white : Colors.grey.shade600,
+                    size: 8,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 4),
+
+            // 공기질 상태 카드 (중앙)
+            Flexible(
+              flex: 5,
+              child: Container(
+                width: 30,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: isLatest ? Colors.grey.shade700 : Colors.transparent,
+                    width: 1.5,
+                  ),
+                ),
+                child: data.gas != null
+                    ? _buildAirQualityStatusCard(data.gas!, isLatest)
+                    : _buildNoDataCard(),
+              ),
+            ),
+
+            const SizedBox(height: 4),
+
+            // 조도 상태 표시
+            Flexible(
+              flex: 2,
+              child: Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: data.light != null
+                      ? _getLightColor(data.light!)
+                      : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isLatest ? Colors.grey.shade600 : Colors.transparent,
+                    width: 1.2,
+                  ),
+                  boxShadow: [
+                    if (data.light != null)
+                      BoxShadow(
+                        color: _getLightColor(data.light!).withOpacity(0.4),
+                        blurRadius: 2,
+                        spreadRadius: 0.5,
+                      ),
+                  ],
+                ),
+                child: data.light != null
+                    ? Icon(
+                        data.light == 1 ? Icons.wb_sunny : Icons.nights_stay,
+                        color: Colors.white,
+                        size: 10,
+                      )
+                    : const Icon(
+                        Icons.help_outline,
+                        color: Colors.white,
+                        size: 10,
+                      ),
+              ),
+            ),
+
+            const SizedBox(height: 4),
+
+            // 시간 표시
+            Flexible(
+              flex: 2,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 1.5, vertical: 1.5),
+                decoration: BoxDecoration(
+                  color: isLatest ? Colors.blue.shade100 : Colors.transparent,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: Text(
+                  _getRelativeTime(data.timestamp),
+                  style: TextStyle(
+                    color: isLatest ? Colors.blue.shade700 : Colors.grey.shade500,
+                    fontSize: 7,
+                    fontWeight: isLatest ? FontWeight.bold : FontWeight.normal,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildTrendItem(
-              '조도', _sensorHistory.take(5).map((e) => e.light ?? 0).toList()),
-          _buildTrendItem(
-              '공기질', _sensorHistory.take(5).map((e) => e.gas ?? 0).toList()),
+    );
+  }).toList();
+}
+
+
+// 공기질 상태 카드 생성
+Widget _buildAirQualityStatusCard(int gasValue, bool isLatest) {
+  final status = _getGasStatusText(gasValue);
+  final color = _getGasColor(gasValue);
+  final statusIcon = _getGasStatusIcon(gasValue);
+  
+  return Container(
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(6),
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          color,
+          color.withOpacity(0.8),
         ],
       ),
-    );
-  }
-
-  Widget _buildTrendItem(String label, List<int> values) {
-    if (values.isEmpty) return const SizedBox();
-
-    final maxValue = values.reduce((a, b) => a > b ? a : b);
-    final minValue = values.reduce((a, b) => a < b ? a : b);
-    final range = maxValue - minValue;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+      boxShadow: [
+        BoxShadow(
+          color: color.withOpacity(0.3),
+          blurRadius: 3,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(label,
-            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 4),
-        Row(
-          children: values.take(5).map((value) {
-            final normalizedHeight = range > 0
-                ? ((value - minValue) / range * 20 + 5).toDouble()
-                : 15.0;
-            return Container(
-              width: 4,
-              height: normalizedHeight,
-              margin: const EdgeInsets.symmetric(horizontal: 1),
-              decoration: BoxDecoration(
-                color: label == '조도' ? Colors.amber : Colors.green,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            );
-          }).toList(),
+        // 상태 아이콘
+        Icon(
+          statusIcon,
+          color: Colors.white,
+          size: 16,
         ),
         const SizedBox(height: 2),
-        Text('${values.first}', style: const TextStyle(fontSize: 8)),
+        
+        // 상태 텍스트
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            status,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        
+        const SizedBox(height: 2),
+        
+        // 수치 (작게)
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            '$gasValue',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 8,
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
       ],
+    ),
+  );
+}
+
+// 데이터 없음 카드
+Widget _buildNoDataCard() {
+  return Container(
+    decoration: BoxDecoration(
+      color: Colors.grey.shade300,
+      borderRadius: BorderRadius.circular(6),
+    ),
+    child: const Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.help_outline,
+          color: Colors.white,
+          size: 16,
+        ),
+        SizedBox(height: 2),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            '데이터\n없음',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+// 공기질 상태별 아이콘 반환
+IconData _getGasStatusIcon(int gas) {
+  if (gas > GAS_THRESHOLD_HIGH) return Icons.warning; // 나쁨
+  if (gas > GAS_THRESHOLD_NORMAL) return Icons.info; // 보통
+  return Icons.check_circle; // 좋음
+}Widget _buildMiniTrendChart() {
+  if (_sensorHistory.length < 3) return const SizedBox();
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // 차트 범례
+      Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildChartLegend('조도', Colors.amber, Icons.wb_sunny),
+                _buildChartLegend('움직임', Colors.blue, Icons.person),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildAirQualityLegend('좋음', Colors.green),
+                const SizedBox(width: 16),
+                _buildAirQualityLegend('보통', Colors.orange),
+                const SizedBox(width: 16),
+                _buildAirQualityLegend('나쁨', Colors.red),
+              ],
+            ),
+          ],
+        ),
+      ),
+
+      const SizedBox(height: 16),
+
+      // 메인 차트 영역 (높이 제한 → 유연하게)
+      Container(
+        constraints: const BoxConstraints(minHeight: 160, maxHeight: 200),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade300),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // 차트 헤더
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '실내 환경 변화 추이',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade700,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  '최근 ${_sensorHistory.length}회',
+                  style: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // 차트 바는 유연하게 확장
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: _buildImprovedChartBars(),
+              ),
+            ),
+          ],
+        ),
+      ),
+
+      const SizedBox(height: 8),
+
+      // 시간 축
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '${_sensorHistory.length}회 전',
+              style: TextStyle(
+                color: Colors.grey.shade500,
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            Text(
+              '현재',
+              style: TextStyle(
+                color: Colors.grey.shade700,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
+
+// 공기질 상태별 범례
+Widget _buildAirQualityLegend(String status, Color color) {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: color.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: color, width: 1),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          status,
+          style: TextStyle(
+            color: color,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+// 공기질 상태 텍스트 반환
+String _getGasStatusText(int gas) {
+  if (gas > GAS_THRESHOLD_HIGH) return '나쁨';
+  if (gas > GAS_THRESHOLD_NORMAL) return '보통';
+  return '좋음';
+}
+Widget _buildChartLegend(String label, Color color, IconData icon) {
+  String description = '';
+  if (label == '공기질') description = '(좋음/보통/나쁨)';
+  if (label == '움직임') description = '(감지/비감지)';
+  if (label == '조도') description = '(밝음/어두움)';
+  
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    child: Column(
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(4),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withOpacity(0.3),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 10,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.grey.shade700,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        Text(
+          description,
+          style: TextStyle(
+            color: Colors.grey.shade500,
+            fontSize: 8,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+List<Widget> _buildChartBars() {
+  final recentData = _sensorHistory.take(8).toList().reversed.toList();
+  
+  return recentData.asMap().entries.map((entry) {
+    final index = entry.key;
+    final data = entry.value;
+    final isLatest = index == recentData.length - 1;
+    
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 3),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            // 움직임 표시 - 감지/비감지 명확하게 표시
+            Container(
+              height: 20,
+              child: Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: data.pir == 1 ? Colors.blue : Colors.grey.shade300,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: data.pir == 1 ? Colors.white : Colors.grey.shade400, 
+                    width: 2
+                  ),
+                  boxShadow: [
+                    if (data.pir == 1)
+                      BoxShadow(
+                        color: Colors.blue.withOpacity(0.3),
+                        blurRadius: 4,
+                        spreadRadius: 1,
+                      ),
+                  ],
+                ),
+                child: Icon(
+                  data.pir == 1 ? Icons.person : Icons.person_outline,
+                  color: data.pir == 1 ? Colors.white : Colors.grey.shade600,
+                  size: 12,
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 4),
+            
+            // 공기질 막대 - 좋음/나쁨 텍스트 표시
+           // 공기질 막대 - 오버플로우 해결
+Flexible(
+  flex: 3,
+  child: Container(
+    width: 30,
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(9),
+      gradient: LinearGradient(
+        begin: Alignment.bottomCenter,
+        end: Alignment.topCenter,
+        colors: [
+          _getGasColor(data.gas ?? 0),
+          _getGasColor(data.gas ?? 0).withOpacity(0.7),
+        ],
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: _getGasColor(data.gas ?? 0).withOpacity(0.3),
+          blurRadius: 2,
+          offset: const Offset(0, 1),
+        ),
+      ],
+    ),
+    child: data.gas != null
+        ? FractionallySizedBox(
+            heightFactor: _normalizeGasValue(data.gas!),
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(9),
+                color: _getGasColor(data.gas!),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min, // 추가: 최소 크기 사용
+                children: [
+                  // 높이가 충분할 때만 숫자 표시
+                  if (_normalizeGasValue(data.gas!) > 0.2)
+                    Flexible( // Expanded 대신 Flexible 사용
+                      child: FittedBox( // 텍스트 크기 자동 조절
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          '${data.gas}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 7,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  // 높이가 매우 충분할 때만 상태 텍스트 표시
+                  if (_normalizeGasValue(data.gas!) > 0.5)
+                    Flexible( // Expanded 대신 Flexible 사용
+                      child: FittedBox( // 텍스트 크기 자동 조절
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          _getGasStatusText(data.gas!),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 6,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          )
+        : Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(9),
+              color: Colors.grey.shade300,
+            ),
+            child: const Center(
+              child: FittedBox( // 여기도 FittedBox 적용
+                child: Text(
+                  '?',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ),
+  ),
+),
+            const SizedBox(height: 4),
+            
+            // 조도 표시 (기존과 동일)
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: data.light != null
+                    ? _getLightColor(data.light!)
+                    : Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isLatest ? Colors.grey.shade700 : Colors.transparent,
+                  width: 2,
+                ),
+                boxShadow: [
+                  if (data.light != null)
+                    BoxShadow(
+                      color: _getLightColor(data.light!).withOpacity(0.4),
+                      blurRadius: 4,
+                      spreadRadius: 1,
+                    ),
+                ],
+              ),
+              child: data.light != null
+                  ? Icon(
+                      data.light == 1 ? Icons.wb_sunny : Icons.nights_stay,
+                      color: Colors.white,
+                      size: 14,
+                    )
+                  : const Icon(
+                      Icons.help_outline,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+            ),
+            
+            const SizedBox(height: 6),
+            
+            // 시간 표시 (기존과 동일)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+              decoration: BoxDecoration(
+                color: isLatest ? Colors.blue.shade100 : Colors.transparent,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                _getRelativeTime(data.timestamp),
+                style: TextStyle(
+                  color: isLatest ? Colors.blue.shade700 : Colors.grey.shade500,
+                  fontSize: 8,
+                  fontWeight: isLatest ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
-  }
+  }).toList();
+}
+// 가스 값 정규화 (0.1 ~ 1.0)
+double _normalizeGasValue(int gasValue) {
+  if (gasValue == 0) return 0.1;
+  if (gasValue > 500) return 1.0;
+  return (gasValue / 500.0).clamp(0.1, 1.0);
+}
+
+// 상대 시간 표시
+String _getRelativeTime(DateTime time) {
+  final now = DateTime.now();
+  final diff = now.difference(time);
+  
+  if (diff.inMinutes < 1) return '지금';
+  if (diff.inMinutes < 60) return '${diff.inMinutes}분';
+  if (diff.inHours < 24) return '${diff.inHours}시간';
+  return '${diff.inDays}일';
+}
 }

@@ -52,13 +52,13 @@ class AirQuality(Base):
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from sqlalchemy.sql import func
 from .database import Base
-
 class SensorData(Base):
     __tablename__ = "sensor_data"
-
+    __table_args__ = {'extend_existing': True}  # 기존 테이블 확장 허용
+    
     id = Column(Integer, primary_key=True, index=True)
-    device_id = Column(String(50))  # 50글자 제한
-
-    temperature = Column(Float)
-    humidity = Column(Float)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+    device_id = Column(String(50), index=True)
+    light = Column(Integer, nullable=True)      # 조도 센서
+    gas = Column(Integer, nullable=True)        # 가스 센서  
+    pir = Column(Integer, nullable=True)        # 움직임 센서
+    timestamp = Column(DateTime, default=func.now())  # 타임스탬프

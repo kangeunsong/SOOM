@@ -67,3 +67,25 @@ class SensorDataCreate(BaseModel):
 
 class SensorDataOut(SensorDataCreate):
     timestamp: str
+
+
+from pydantic import BaseModel
+from datetime import datetime
+from typing import Optional
+
+class SensorDataCreate(BaseModel):
+    device_id: str
+    light: Optional[int] = None
+    gas: Optional[int] = None
+    pir: Optional[int] = None
+
+class SensorDataOut(BaseModel):
+    id: int
+    device_id: str
+    light: Optional[int]
+    gas: Optional[int] 
+    pir: Optional[int]
+    timestamp: datetime
+    
+    class Config:
+        from_attributes = True

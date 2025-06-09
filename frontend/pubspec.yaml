@@ -17,6 +17,7 @@ dependencies:
   geolocator: ^10.1.0
   porcupine_flutter: ^3.0.3
   permission_handler: ^11.0.1
+  flutter_secure_storage: ^8.0.0
 
 dev_dependencies:
   flutter_test:

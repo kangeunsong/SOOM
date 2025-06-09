@@ -13,6 +13,10 @@ import 'package:flutter_fastapi_auth/config.dart';
 import 'package:flutter_fastapi_auth/screens/weather_detail_screen.dart';
 import 'package:porcupine_flutter/porcupine_manager.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import 'package:shared_preferences/shared_preferences.dart';
+import '../main.dart'; // MyApp을 위해
 
 import '../services/wakeword_service.dart';
 
@@ -374,9 +378,48 @@ bool _calculateOptimalActionForOccupancy(SensorData current) {
   }
 
   void _logout() async {
-    final success = await _apiService.logout();
-    if (success) {
-      Navigator.pushReplacementNamed(context, '/login');
+    print('🚪 [HOME] 로그아웃 시작');
+
+    try {
+      // 1️⃣ API 서버 로그아웃
+      final success = await _apiService.logout();
+      if (success) {
+        print('✅ [HOME] 서버 로그아웃 성공');
+      } else {
+        print('⚠️ [HOME] 서버 로그아웃 실패 (계속 진행)');
+      }
+
+      // 2️⃣ 로컬 저장소 완전 삭제
+      const storage = FlutterSecureStorage();
+      await storage.deleteAll(); // 모든 FlutterSecureStorage 데이터 삭제
+
+      // SharedPreferences도 삭제 (API 호출용 토큰)
+      final prefs = await SharedPreferences.getInstance();
+      await prefs
+          .clear(); // 또는 개별 삭제: prefs.remove('token'), prefs.remove('username')
+
+      print('🗑️ [HOME] 모든 저장된 데이터 삭제 완료');
+
+      // 3️⃣ 로그인 화면으로 이동 (앱 재시작과 같은 효과)
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => MyApp()),
+          (route) => false, // 모든 이전 화면 제거
+        );
+      }
+    } catch (e) {
+      print('💥 [HOME] 로그아웃 중 오류: $e');
+
+      // 오류가 있어도 강제 로그아웃
+      const storage = FlutterSecureStorage();
+      await storage.deleteAll();
+
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => MyApp()),
+          (route) => false,
+        );
+      }
     }
   }
 

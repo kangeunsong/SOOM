@@ -102,6 +102,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _sensorCheckTimer;
   bool _isMonitoringActive = true;
   List<SensorData> _sensorHistory = [];
+  bool _autoControlEnabled = true; // 자동 제어 활성화 여부
+  bool _windowCurrentlyOpen = false; // 현재 창문 상태
+  DateTime? _lastAutoAction; // 마지막 자동 동작 시간
+  static const Duration AUTO_ACTION_COOLDOWN = Duration(minutes: 10); // 자동 동작 간격
+
 
   // 센서 임계값 설정 (더 세밀하게 조정)
   static const int LIGHT_THRESHOLD_DARK = 150; // 어두워지는 기준 (낮아짐)
@@ -116,6 +121,175 @@ class _HomeScreenState extends State<HomeScreen> {
   PorcupineManager? _porcupineManager;
   bool _isListening = false;
 
+// 움직임 감지 시 즉시 창문 닫기 여부 판단
+bool _shouldCloseWindowOnMovement(SensorData current) {
+  final hour = DateTime.now().hour;
+  
+  // 1. 야간 시간대 (22시~6시)
+  bool isNightTime = hour >= 22 || hour <= 6;
+  
+  // 2. 외부 공기질이 매우 나쁨
+  bool veryBadAirQuality = _currentAirQuality != null && 
+    (_currentAirQuality!.pm10 > 100 || _currentAirQuality!.pm25 > 50);
+  
+  // 3. 극한 날씨 (매우 춥거나 더움)
+  bool extremeWeather = _currentWeather != null && 
+    (_currentWeather!.temperature < 0 || _currentWeather!.temperature > 35);
+  
+  // 4. 비나 눈이 오는 중
+  bool badWeather = _currentWeather != null && 
+    (_currentWeather!.precipitation > 1.0 || 
+     (_currentWeather!.skyCondition?.contains('비') == true) ||
+     (_currentWeather!.skyCondition?.contains('눈') == true));
+  
+  // 5. 실내 가스 농도는 정상이지만 외부 조건이 나쁠 때
+  bool indoorAirOk = current.gas == null || current.gas! < GAS_THRESHOLD_NORMAL;
+  
+  print("🔍 움직임 닫기 조건 체크:");
+  print("  - 야간: $isNightTime");
+  print("  - 나쁜 공기질: $veryBadAirQuality"); 
+  print("  - 극한 날씨: $extremeWeather");
+  print("  - 나쁜 날씨: $badWeather");
+  print("  - 실내 공기 양호: $indoorAirOk");
+  
+  return (isNightTime || veryBadAirQuality || extremeWeather || badWeather) && indoorAirOk;
+}
+
+// 움직임 감지 시 창문 닫기 이유 설명
+String _getMovementCloseReason() {
+  final hour = DateTime.now().hour;
+  List<String> reasons = [];
+  
+  // 야간 시간대
+  if (hour >= 22 || hour <= 6) {
+    reasons.add("야간 시간대입니다");
+  }
+  
+  // 외부 공기질
+  if (_currentAirQuality != null) {
+    if (_currentAirQuality!.pm10 > 100 || _currentAirQuality!.pm25 > 50) {
+      reasons.add("외부 미세먼지가 매우 나쁩니다");
+    }
+  }
+  
+  // 날씨 조건
+  if (_currentWeather != null) {
+    if (_currentWeather!.temperature < 0) {
+      reasons.add("매우 추운 날씨입니다");
+    } else if (_currentWeather!.temperature > 35) {
+      reasons.add("매우 더운 날씨입니다");
+    }
+    
+    if (_currentWeather!.precipitation > 1.0) {
+      reasons.add("비/눈이 오고 있습니다");
+    }
+  }
+  
+  if (reasons.isEmpty) {
+    return "에너지 절약을 위해";
+  }
+  
+  return reasons.join(", ");
+}
+
+// 개선된 사용자 활동 감지 시 조정 필요 여부
+bool _shouldAdjustForOccupancy(SensorData current) {
+  // 실내 공기질이 경계선에 있거나, 외부 환경이 변화했을 때
+  bool airQualityBorderline = current.gas != null && 
+    current.gas! > GAS_THRESHOLD_NORMAL && current.gas! < GAS_THRESHOLD_HIGH;
+  
+  bool timeForAdjustment = _lastAutoAction == null || 
+    DateTime.now().difference(_lastAutoAction!) > const Duration(minutes: 30);
+  
+  // 움직임이 감지되면 더 적극적으로 조정 고려
+  bool movementDetected = current.pir == 1;
+    
+  print("🔍 조정 필요 여부 체크:");
+  print("  - 공기질 경계선: $airQualityBorderline");
+  print("  - 시간 경과: $timeForAdjustment");
+  print("  - 움직임 감지: $movementDetected");
+  
+  return airQualityBorderline || timeForAdjustment || movementDetected;
+}
+
+// 사용자 활동 시 최적 동작 계산 (움직임 감지에 최적화)
+bool _calculateOptimalActionForOccupancy(SensorData current) {
+  // 복합적 판단
+  double score = 0.0;
+  final hour = DateTime.now().hour;
+  
+  print("🧮 점수 계산 시작:");
+  
+  // 시간대별 가중치 (움직임 감지 시 더 보수적으로)
+  if (hour >= 22 || hour <= 6) {
+    score -= 2.0; // 야간에는 강하게 닫기 권장
+    print("  - 야간 시간: -2.0");
+  } else if (hour >= 6 && hour <= 9) {
+    score += 1.0; // 아침에는 환기 권장
+    print("  - 아침 시간: +1.0");
+  } else if (hour >= 18 && hour <= 22) {
+    score -= 0.5; // 저녁에는 약간 닫기 권장
+    print("  - 저녁 시간: -0.5");
+  }
+  
+  // 실내 공기질 점수 (가스 농도)
+  if (current.gas != null) {
+    if (current.gas! < GAS_THRESHOLD_NORMAL) {
+      score += 0.5; // 좋음
+      print("  - 실내 공기질 좋음: +0.5");
+    } else if (current.gas! < GAS_THRESHOLD_HIGH) {
+      score += 0.0; // 보통
+      print("  - 실내 공기질 보통: +0.0");
+    } else {
+      score += 2.0; // 나쁘면 강하게 열기 권장
+      print("  - 실내 공기질 나쁨: +2.0");
+    }
+  }
+  
+  // 외부 공기질 점수 (더 엄격하게)
+  if (_currentAirQuality != null) {
+    if (_currentAirQuality!.pm10 < 20) {
+      score += 1.0; // 매우 좋음
+      print("  - 외부 공기질 매우 좋음: +1.0");
+    } else if (_currentAirQuality!.pm10 < 50) {
+      score += 0.3; // 좋음
+      print("  - 외부 공기질 좋음: +0.3");
+    } else if (_currentAirQuality!.pm10 < 100) {
+      score -= 0.5; // 보통
+      print("  - 외부 공기질 보통: -0.5");
+    } else {
+      score -= 2.0; // 나쁨
+      print("  - 외부 공기질 나쁨: -2.0");
+    }
+  }
+  
+  // 날씨 점수 (보수적으로)
+  if (_currentWeather != null) {
+    if (_currentWeather!.precipitation > 0.5) {
+      score -= 1.5; // 비/눈
+      print("  - 비/눈: -1.5");
+    }
+    
+    if (_currentWeather!.temperature < 5 || _currentWeather!.temperature > 30) {
+      score -= 1.0; // 극한 온도
+      print("  - 극한 온도: -1.0");
+    } else if (_currentWeather!.temperature >= 18 && _currentWeather!.temperature <= 25) {
+      score += 0.5; // 적정 온도
+      print("  - 적정 온도: +0.5");
+    }
+  }
+  
+  // 창문이 이미 열려있다면 닫기에 약간 가산점 (에너지 절약)
+  if (_windowCurrentlyOpen) {
+    score -= 0.3;
+    print("  - 창문 이미 열림: -0.3");
+  }
+  
+  print("📊 최종 점수: $score");
+  print("🔽 결정: ${score > 0.5 ? '창문 열기' : '창문 닫기'}");
+  
+  return score > 0.5; // 더 높은 임계값으로 신중하게 판단
+}
   @override
   void initState() {
     super.initState();
@@ -282,88 +456,338 @@ class _HomeScreenState extends State<HomeScreen> {
       if (_useDummySensorData) _triggerDummySensorPopup();
     }
   }
+SensorAnalysis? _analyzeSensorChanges(SensorData old, SensorData current) {
+  // 1. 급격한 가스 농도 증가 (최우선 - 즉시 창문 열기)
+  if (old.gas != null && current.gas != null) {
+    int gasChange = current.gas! - old.gas!;
 
-  // 개선된 센서 변화 분석
-  SensorAnalysis? _analyzeSensorChanges(SensorData old, SensorData current) {
-    // 1. 급격한 가스 농도 증가 (최우선)
-    if (old.gas != null && current.gas != null) {
-      int gasChange = current.gas! - old.gas!;
+    // 위험 수준의 가스 농도 증가
+    if (gasChange > GAS_CHANGE_THRESHOLD && current.gas! > GAS_THRESHOLD_HIGH) {
+      if (_autoControlEnabled && _shouldPerformAutoAction()) {
+        // 비동기 함수는 별도로 호출
+        Future.microtask(() => _performAutoWindowControl(true, "가스 농도 급증"));
+      }
+      return SensorAnalysis(
+        shouldOpenWindow: true,
+        reason: "🚨 실내 공기질이 급격히 악화되었습니다!\n가스 농도: ${old.gas} → ${current.gas}\n즉시 환기가 필요합니다.",
+        urgency: "high",
+        color: Colors.red,
+      );
+    }
 
-      if (gasChange > GAS_CHANGE_THRESHOLD &&
-          current.gas! > GAS_THRESHOLD_HIGH) {
+    // 가스 농도가 높은 상태에서 움직임 감지
+    if ((current.pir ?? 0) == 1 && current.gas! > GAS_THRESHOLD_HIGH) {
+      if (_autoControlEnabled && _shouldPerformAutoAction()) {
+        Future.microtask(() => _performAutoWindowControl(true, "움직임 감지 + 공기질 나쁨"));
+      }
+      return SensorAnalysis(
+        shouldOpenWindow: true,
+        reason: "👤 움직임이 감지되었고 실내 공기질이 나쁩니다.\n가스 농도: ${current.gas}\n환기를 권장합니다.",
+        urgency: "high",
+        color: Colors.orange,
+      );
+    }
+
+    // 가스 농도가 정상으로 돌아왔을 때 (외부 공기질 확인 후 닫기)
+    if (old.gas! > GAS_THRESHOLD_HIGH && current.gas! < GAS_THRESHOLD_NORMAL) {
+      if (_shouldCloseWindowAfterImprovement()) {
+        if (_autoControlEnabled && _shouldPerformAutoAction()) {
+          Future.microtask(() => _performAutoWindowControl(false, "실내 공기질 개선"));
+        }
         return SensorAnalysis(
-          shouldOpenWindow: true,
-          reason:
-              "🚨 실내 공기질이 급격히 악화되었습니다!\n가스 농도: ${old.gas} → ${current.gas}\n즉시 환기가 필요합니다.",
-          urgency: "high",
-          color: Colors.red,
+          shouldOpenWindow: false,
+          reason: "✅ 실내 공기질이 개선되었지만\n외부 미세먼지를 고려하여 창문을 닫는 것을 권장합니다.",
+          urgency: "medium",
+          color: Colors.amber,
         );
       }
-
-      // 가스 농도가 높은 상태에서 움직임 감지
-      if ((current.pir ?? 0) == 1 && current.gas! > GAS_THRESHOLD_HIGH) {
-        return SensorAnalysis(
-          shouldOpenWindow: true,
-          reason:
-              "👤 움직임이 감지되었고 실내 공기질이 나쁩니다.\n가스 농도: ${current.gas}\n환기를 권장합니다.",
-          urgency: "high",
-          color: Colors.orange,
-        );
-      }
     }
-
-    // 2. 조도 변화 기반 시간대 분석
-    if (old.light != null && current.light != null) {
-      int lightChange = current.light! - old.light!;
-
-      // 급격히 어두워짐 (저녁/밤)
-      if (lightChange < -LIGHT_CHANGE_THRESHOLD &&
-          current.light! < LIGHT_THRESHOLD_DARK) {
-        // 외부 공기질이 나쁘거나 가스 농도가 정상이면 창문 닫기 권장
-        if (_shouldCloseWindowAtNight()) {
-          return SensorAnalysis(
-            shouldOpenWindow: false,
-            reason: "🌙 어두워졌습니다.\n${_getCloseWindowReason()}\n창문을 닫는 것을 권장합니다.",
-            urgency: "medium",
-            color: Colors.blue,
-          );
-        }
-      }
-
-      // 급격히 밝아짐 (아침)
-      else if (lightChange > LIGHT_CHANGE_THRESHOLD &&
-          current.light! > LIGHT_THRESHOLD_BRIGHT) {
-        if (_shouldOpenWindowInMorning(current)) {
-          return SensorAnalysis(
-            shouldOpenWindow: true,
-            reason:
-                "☀️ 밝아졌습니다!\n실내 공기질이 양호하고 환기하기 좋은 시간입니다.\n신선한 공기를 위해 창문을 여는 것을 권장합니다.",
-            urgency: "low",
-            color: Colors.green,
-          );
-        }
-      }
-    }
-
-    // 3. 공기질 개선 후 외부 상황 고려
-    if (old.gas != null && current.gas != null) {
-      if (old.gas! > GAS_THRESHOLD_HIGH &&
-          current.gas! < GAS_THRESHOLD_NORMAL) {
-        // 실내 공기질은 좋아졌지만 외부 미세먼지가 나쁘면 닫기 권장
-        if (_currentAirQuality != null &&
-            (_currentAirQuality!.pm10 > 80 || _currentAirQuality!.pm25 > 35)) {
-          return SensorAnalysis(
-            shouldOpenWindow: false,
-            reason: "✅ 실내 공기질이 개선되었지만\n외부 미세먼지가 나쁩니다.\n창문을 닫아두는 것을 권장합니다.",
-            urgency: "medium",
-            color: Colors.amber,
-          );
-        }
-      }
-    }
-
-    return null; // 특별한 변화 없음
   }
+
+  // 2. 조도 변화 기반 시간대 분석
+  if (old.light != null && current.light != null) {
+    int lightChange = current.light! - old.light!;
+
+    // 급격히 어두워짐 (저녁/밤) - 창문 닫기
+    if (lightChange < -LIGHT_CHANGE_THRESHOLD && current.light! < LIGHT_THRESHOLD_DARK) {
+      if (_shouldCloseWindowAtNight()) {
+        if (_autoControlEnabled && _shouldPerformAutoAction()) {
+          Future.microtask(() => _performAutoWindowControl(false, "야간 시간대"));
+        }
+        return SensorAnalysis(
+          shouldOpenWindow: false,
+          reason: "🌙 어두워졌습니다.\n${_getCloseWindowReason()}\n창문을 닫는 것을 권장합니다.",
+          urgency: "medium",
+          color: Colors.blue,
+        );
+      }
+    }
+
+    // 급격히 밝아짐 (아침) - 조건부 창문 열기
+    else if (lightChange > LIGHT_CHANGE_THRESHOLD && current.light! > LIGHT_THRESHOLD_BRIGHT) {
+      if (_shouldOpenWindowInMorning(current)) {
+        if (_autoControlEnabled && _shouldPerformAutoAction()) {
+          Future.microtask(() => _performAutoWindowControl(true, "아침 환기"));
+        }
+        return SensorAnalysis(
+          shouldOpenWindow: true,
+          reason: "☀️ 밝아졌습니다!\n실내 공기질이 양호하고 환기하기 좋은 시간입니다.\n신선한 공기를 위해 창문을 여는 것을 권장합니다.",
+          urgency: "low",
+          color: Colors.green,
+        );
+      }
+    }
+  }
+
+// 3. 움직임 감지 시 적응형 제어 (완전히 개선된 버전)
+if (old.pir != current.pir && current.pir == 1) {
+  print("👤 움직임 감지됨 - 분석 시작");
+  
+  // 움직임 감지 시 즉시 창문 닫기가 필요한 상황들
+  if (_shouldCloseWindowOnMovement(current)) {
+    print("🔒 즉시 창문 닫기 조건 만족");
+    if (_autoControlEnabled && _shouldPerformAutoAction()) {
+      Future.microtask(() => _performAutoWindowControl(false, "움직임 감지 - 즉시 닫기"));
+    }
+    return SensorAnalysis(
+      shouldOpenWindow: false,
+      reason: "👤 움직임이 감지되었습니다.\n${_getMovementCloseReason()}\n창문을 닫는 것을 권장합니다.",
+      urgency: "high",
+      color: Colors.orange,
+    );
+  }
+  
+  // 일반적인 움직임 감지 시 환경 체크
+  else if (_shouldAdjustForOccupancy(current)) {
+    print("⚖️ 환경 기반 판단 시작");
+    bool shouldOpen = _calculateOptimalActionForOccupancy(current);
+    if (_autoControlEnabled && _shouldPerformAutoAction()) {
+      String reason = shouldOpen ? "사용자 활동 감지 - 환기" : "사용자 활동 감지 - 절약";
+      Future.microtask(() => _performAutoWindowControl(shouldOpen, reason));
+    }
+    return SensorAnalysis(
+      shouldOpenWindow: shouldOpen,
+      reason: shouldOpen 
+        ? "👤 활동이 감지되었습니다.\n현재 실내 환경을 고려하여 환기를 권장합니다."
+        : "👤 활동이 감지되었습니다.\n현재 외부 환경을 고려하여 창문을 닫아두는 것을 권장합니다.",
+      urgency: "medium",
+      color: shouldOpen ? Colors.green : Colors.orange,
+    );
+  }
+  
+  // 단순 움직임 알림 (조건을 만족하지 않더라도 알림 표시)
+  else {
+    print("ℹ️ 단순 움직임 감지 알림");
+    return SensorAnalysis(
+      shouldOpenWindow: false,
+      reason: "👤 움직임이 감지되었습니다.\n현재 환경 조건상 창문 상태 변경이 권장되지 않습니다.",
+      urgency: "low",
+      color: Colors.blue,
+    );
+  }
+}
+  return null; // 특별한 변화 없음
+}
+
+// 자동 동작 수행 가능 여부 확인
+bool _shouldPerformAutoAction() {
+  if (_lastAutoAction == null) return true;
+  return DateTime.now().difference(_lastAutoAction!) > AUTO_ACTION_COOLDOWN;
+}
+// 수정된 환기 버튼 액션 메서드
+Future<void> _handleVentilationAction(bool openWindow) async {
+  if (!mounted) return; // 위젯이 마운트되어 있는지 확인
+  
+  // 창문 상태 업데이트
+  setState(() {
+    _windowCurrentlyOpen = openWindow;
+  });
+
+  String message = openWindow ? "창문을 열어 환기를 시작합니다." : "창문을 닫습니다.";
+
+  // 사용자에게 메시지 표시
+  if (mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              openWindow ? Icons.window : Icons.window_outlined,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 8),
+            Text(message),
+          ],
+        ),
+        backgroundColor: openWindow ? Colors.green : Colors.orange,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  // 백엔드 서버의 API 주소
+  final uri = Uri.parse(openWindow
+      ? "https://5912-113-198-180-200.ngrok-free.app/iot/send/open"
+      : "https://5912-113-198-180-200.ngrok-free.app/iot/send/close");
+
+  try {
+    final response = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+    );
+    
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      print("✅ 명령 전송 성공: ${responseData['status']}");
+
+      // 성공 시 추가 피드백
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                Text("✅ 창문 ${openWindow ? '열기' : '닫기'} 완료"),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } else {
+      print("❌ 명령 전송 실패: ${response.statusCode}, ${response.body}");
+      
+      // 실패 시 창문 상태 원복
+      if (mounted) {
+        setState(() {
+          _windowCurrentlyOpen = !openWindow;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                SizedBox(width: 8),
+                Text("❌ 명령 전송에 실패했습니다."),
+              ],
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  } catch (e) {
+    print("❌ 네트워크 오류: $e");
+    
+    // 실패 시 창문 상태 원복
+    if (mounted) {
+      setState(() {
+        _windowCurrentlyOpen = !openWindow;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.wifi_off, color: Colors.white),
+              SizedBox(width: 8),
+              Text("❌ 네트워크 연결을 확인해주세요."),
+            ],
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+}
+
+// 자동 창문 제어 실행
+Future<void> _performAutoWindowControl(bool openWindow, String reason) async {
+  if (!mounted) return; // 위젯이 마운트되어 있는지 확인
+  
+  setState(() {
+    _lastAutoAction = DateTime.now();
+    _windowCurrentlyOpen = openWindow;
+  });
+
+  print("🤖 자동 제어: ${openWindow ? '창문 열기' : '창문 닫기'} - $reason");
+
+  // 사용자에게 자동 제어 알림
+  if (mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(
+              Icons.smart_toy,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text("🤖 자동 제어: ${openWindow ? '창문 열기' : '창문 닫기'}\n사유: $reason"),
+            ),
+          ],
+        ),
+        backgroundColor: openWindow ? Colors.green : Colors.orange,
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: '취소',
+          textColor: Colors.white,
+          onPressed: () {
+            // 사용자가 취소하면 반대 동작 수행
+            _handleVentilationAction(!openWindow);
+          },
+        ),
+      ),
+    );
+  }
+
+  // 실제 창문 제어 API 호출
+  await _handleVentilationAction(openWindow);
+}
+
+// 공기질 개선 후 창문 닫기 여부 결정
+bool _shouldCloseWindowAfterImprovement() {
+  if (_currentAirQuality != null) {
+    // 외부 미세먼지가 나쁘면 닫기
+    return _currentAirQuality!.pm10 > 50 || _currentAirQuality!.pm25 > 25;
+  }
+  return false; // 공기질 정보가 없으면 열어둠
+}
+
+
+// 자동 제어 설정 토글 메서드
+void _toggleAutoControl() {
+  setState(() {
+    _autoControlEnabled = !_autoControlEnabled;
+  });
+  
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Row(
+        children: [
+          Icon(
+            _autoControlEnabled ? Icons.smart_toy : Icons.smart_toy_outlined,
+            color: Colors.white,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            _autoControlEnabled 
+              ? '🤖 자동 창문 제어 활성화됨' 
+              : '🔧 자동 창문 제어 비활성화됨',
+          ),
+        ],
+      ),
+      backgroundColor: _autoControlEnabled ? Colors.blue : Colors.grey,
+      duration: const Duration(seconds: 2),
+    ),
+  );
+}
+
+
 
   bool _shouldCloseWindowAtNight() {
     if (_currentAirQuality != null) {
@@ -542,52 +966,284 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
   }
+// _buildSensorStatusRow() 함수를 완전히 새로 작성:
 
-  Widget _buildSensorStatusRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
+Widget _buildSensorStatusRow() {
+  return SizedBox(
+
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         if (_lastSensorData!.light != null)
-          _buildSensorItem(
-            icon: Icons.lightbulb,
-            label: '조도',
-            value: _lastSensorData!.light.toString(),
-            color: _getLightColor(_lastSensorData!.light!),
+          Expanded(
+            child: _buildCompactSensorItem(
+              icon: Icons.lightbulb,
+              label: '조도',
+              value: _lastSensorData!.light.toString(),
+              color: _getLightColor(_lastSensorData!.light!),
+            ),
           ),
         if (_lastSensorData!.gas != null)
-          _buildSensorItem(
-            icon: Icons.air,
-            label: '공기질',
-            value: _lastSensorData!.gas.toString(),
-            color: _getGasColor(_lastSensorData!.gas!),
+          Expanded(
+            child: _buildCompactSensorItem(
+              icon: Icons.air,
+              label: '공기질',
+              value: _lastSensorData!.gas.toString(),
+              color: _getGasColor(_lastSensorData!.gas!),
+            ),
           ),
         if (_lastSensorData!.pir != null)
-          _buildSensorItem(
-            icon: Icons.person,
-            label: '움직임',
-            value: _lastSensorData!.pir == 1 ? '감지' : '없음',
-            color: _lastSensorData!.pir == 1 ? Colors.blue : Colors.grey,
+          Expanded(
+            child: _buildCompactSensorItem(
+              icon: Icons.person,
+              label: '움직임',
+              value: _lastSensorData!.pir == 1 ? '감지' : '없음',
+              color: _lastSensorData!.pir == 1 ? Colors.blue : Colors.grey,
+            ),
           ),
       ],
-    );
-  }
+    ),
+  );
+}
 
-  Widget _buildSensorItem({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Column(
+// 새로운 컴팩트 센서 아이템 함수 (기존 _buildSensorItem 대신 사용):
+Widget _buildCompactSensorItem({
+  required IconData icon,
+  required String label,
+  required String value,
+  required Color color,
+}) {
+  return Container(
+    height: 66, // 고정 높이
+    margin: const EdgeInsets.symmetric(horizontal: 2),
+    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+    decoration: BoxDecoration(
+      color: color.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(6),
+      border: Border.all(color: color.withOpacity(0.3), width: 1),
+    ),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: color, size: 24),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 12)),
-        Text(value,
-            style: TextStyle(fontWeight: FontWeight.bold, color: color)),
+        Icon(icon, color: color, size: 14),
+        const SizedBox(height: 1),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 7, fontWeight: FontWeight.w500),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: color,
+            fontSize: 8,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+        ),
       ],
-    );
+    ),
+  );
+}
+// _buildSensorItem 함수도 완전히 새로 작성:
+Widget _buildSensorItem({
+  required IconData icon,
+  required String label,
+  required String value,
+  required Color color,
+}) {
+  return Container(
+    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          icon, 
+          color: color, 
+          size: 18, // 크기 더 축소
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 9, // 더 작게
+            fontWeight: FontWeight.w500,
+          ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 1),
+        Flexible( // Flexible로 텍스트 크기 조절
+          child: Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: color,
+              fontSize: 10, // 더 작게
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+// 또는 더 간단한 해결책 - 가로 배치로 변경:
+Widget _buildSensorStatusRowHorizontal() {
+  List<Widget> items = [];
+  
+  if (_lastSensorData!.light != null) {
+    items.add(_buildHorizontalSensorItem(
+      icon: Icons.lightbulb,
+      label: '조도',
+      value: _lastSensorData!.light.toString(),
+      color: _getLightColor(_lastSensorData!.light!),
+    ));
   }
+  
+  if (_lastSensorData!.gas != null) {
+    items.add(_buildHorizontalSensorItem(
+      icon: Icons.air,
+      label: '공기질',
+      value: _lastSensorData!.gas.toString(),
+      color: _getGasColor(_lastSensorData!.gas!),
+    ));
+  }
+  
+  if (_lastSensorData!.pir != null) {
+    items.add(_buildHorizontalSensorItem(
+      icon: Icons.person,
+      label: '움직임',
+      value: _lastSensorData!.pir == 1 ? '감지' : '없음',
+      color: _lastSensorData!.pir == 1 ? Colors.blue : Colors.grey,
+    ));
+  }
+  
+  return SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: Row(
+      children: items.map((item) => Container(
+        margin: const EdgeInsets.only(right: 8),
+        child: item,
+      )).toList(),
+    ),
+  );
+}
+
+Widget _buildHorizontalSensorItem({
+  required IconData icon,
+  required String label,
+  required String value,
+  required Color color,
+}) {
+  return Container(
+    height: 32,
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: color.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: color.withOpacity(0.3)),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: color, size: 12),
+        const SizedBox(width: 4),
+        Text(
+          '$label: $value',
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            color: color,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+// 가장 안전한 해결책 - 텍스트만 사용:
+Widget _buildSensorStatusRowText() {
+  List<String> statusTexts = [];
+  
+  if (_lastSensorData!.light != null) {
+    statusTexts.add('조도 ${_lastSensorData!.light}');
+  }
+  
+  if (_lastSensorData!.gas != null) {
+    statusTexts.add('공기질 ${_lastSensorData!.gas}');
+  }
+  
+  if (_lastSensorData!.pir != null) {
+    statusTexts.add('움직임 ${_lastSensorData!.pir == 1 ? '감지' : '없음'}');
+  }
+  
+  return Container(
+    padding: const EdgeInsets.all(8),
+    decoration: BoxDecoration(
+      color: Colors.grey.shade50,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text(
+      statusTexts.join(' • '),
+      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+      textAlign: TextAlign.center,
+    ),
+  );
+}
+// 또는 더 간단한 해결책 - 센서 상태를 가로 스크롤로 변경:
+Widget _buildSensorStatusRowScrollable() {
+  return SizedBox(
+    height: 50, // 고정 높이
+    child: ListView(
+      scrollDirection: Axis.horizontal,
+      children: [
+        if (_lastSensorData!.light != null)
+          Container(
+            width: 70,
+            margin: const EdgeInsets.only(right: 8),
+            child: _buildCompactSensorItem(
+              icon: Icons.lightbulb,
+              label: '조도',
+              value: _lastSensorData!.light.toString(),
+              color: _getLightColor(_lastSensorData!.light!),
+            ),
+          ),
+        if (_lastSensorData!.gas != null)
+          Container(
+            width: 70,
+            margin: const EdgeInsets.only(right: 8),
+            child: _buildCompactSensorItem(
+              icon: Icons.air,
+              label: '공기질',
+              value: _lastSensorData!.gas.toString(),
+              color: _getGasColor(_lastSensorData!.gas!),
+            ),
+          ),
+        if (_lastSensorData!.pir != null)
+          Container(
+            width: 70,
+            child: _buildCompactSensorItem(
+              icon: Icons.person,
+              label: '움직임',
+              value: _lastSensorData!.pir == 1 ? '감지' : '없음',
+              color: _lastSensorData!.pir == 1 ? Colors.blue : Colors.grey,
+            ),
+          ),
+      ],
+    ),
+  );
+}
 
   Color _getLightColor(int light) {
     if (light < LIGHT_THRESHOLD_DARK) return Colors.indigo;
@@ -770,66 +1426,66 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // 환기 버튼 액션 메서드
-  void _handleVentilationAction(bool openWindow) async {
-    String message = openWindow ? "창문을 열어 환기를 시작합니다." : "창문을 닫습니다.";
+  // // 환기 버튼 액션 메서드
+  // void _handleVentilationAction(bool openWindow) async {
+  //   String message = openWindow ? "창문을 열어 환기를 시작합니다." : "창문을 닫습니다.";
 
-    // 사용자에게 메시지 표시
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(
-              openWindow ? Icons.window : Icons.window_outlined,
-              color: Colors.white,
-            ),
-            const SizedBox(width: 8),
-            Text(message),
-          ],
-        ),
-        backgroundColor: openWindow ? Colors.green : Colors.orange,
-        duration: const Duration(seconds: 3),
-      ),
-    );
+  //   // 사용자에게 메시지 표시
+  //   ScaffoldMessenger.of(context).showSnackBar(
+  //     SnackBar(
+  //       content: Row(
+  //         children: [
+  //           Icon(
+  //             openWindow ? Icons.window : Icons.window_outlined,
+  //             color: Colors.white,
+  //           ),
+  //           const SizedBox(width: 8),
+  //           Text(message),
+  //         ],
+  //       ),
+  //       backgroundColor: openWindow ? Colors.green : Colors.orange,
+  //       duration: const Duration(seconds: 3),
+  //     ),
+  //   );
 
-    // 백엔드 서버의 API 주소
-    final uri = Uri.parse(openWindow
-        ? "https://5912-113-198-180-200.ngrok-free.app/iot/send/open"
-        : "https://5912-113-198-180-200.ngrok-free.app/iot/send/close");
+  //   // 백엔드 서버의 API 주소
+  //   final uri = Uri.parse(openWindow
+  //       ? "https://5912-113-198-180-200.ngrok-free.app/iot/send/open"
+  //       : "https://5912-113-198-180-200.ngrok-free.app/iot/send/close");
 
-    try {
-      final response = await http.post(uri);
-      if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        print("✅ 명령 전송 성공: ${responseData['message']}");
+  //   try {
+  //     final response = await http.post(uri);
+  //     if (response.statusCode == 200) {
+  //       final responseData = json.decode(response.body);
+  //       print("✅ 명령 전송 성공: ${responseData['message']}");
 
-        // 성공 시 추가 피드백
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("✅ ${responseData['message']}"),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      } else {
-        print("❌ 명령 전송 실패: ${response.statusCode}, ${response.body}");
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("❌ 명령 전송에 실패했습니다."),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      print("❌ 네트워크 오류: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("❌ 네트워크 연결을 확인해주세요."),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
+  //       // 성공 시 추가 피드백
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text("✅ ${responseData['message']}"),
+  //           backgroundColor: Colors.green,
+  //           duration: const Duration(seconds: 2),
+  //         ),
+  //       );
+  //     } else {
+  //       print("❌ 명령 전송 실패: ${response.statusCode}, ${response.body}");
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(
+  //           content: Text("❌ 명령 전송에 실패했습니다."),
+  //           backgroundColor: Colors.red,
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     print("❌ 네트워크 오류: $e");
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(
+  //         content: Text("❌ 네트워크 연결을 확인해주세요."),
+  //         backgroundColor: Colors.red,
+  //       ),
+  //     );
+  //   }
+  // }
 
   Future<void> _loadWeatherData() async {
     setState(() {
@@ -1058,7 +1714,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ],
                                   ),
                                   const SizedBox(height: 20),
-                                  _buildSensorStatusRow(),
+                                  SizedBox(
+
+  child: _buildSensorStatusRow(),
+),
 
                                   // 센서 히스토리 미니 차트 (선택적)
                                   if (_sensorHistory.length >= 3) ...[
@@ -1080,7 +1739,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                         ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 10),
 
                       // 날씨 카드
                       if (_currentWeather != null)
@@ -1359,7 +2018,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_sensorHistory.length < 3) return const SizedBox();
 
     return Container(
-      height: 60,
+      height: 80,
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.grey.shade50,

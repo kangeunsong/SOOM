@@ -53,3 +53,26 @@ def save_sensor_data(db: Session, data: schemas.SensorDataCreate):
 
 def get_latest_sensor_data(db: Session):
     return db.query(models.SensorData).order_by(models.SensorData.timestamp.desc()).first()
+
+
+from sqlalchemy.orm import Session
+from . import models, schemas
+from datetime import datetime
+
+def save_sensor_data(db: Session, sensor_data: schemas.SensorDataCreate):
+    """센서 데이터를 데이터베이스에 저장"""
+    db_sensor = models.SensorData(
+        device_id=sensor_data.device_id,
+        light=sensor_data.light,
+        gas=sensor_data.gas,
+        pir=sensor_data.pir,
+        timestamp=datetime.now()
+    )
+    db.add(db_sensor)
+    db.commit()
+    db.refresh(db_sensor)
+    return db_sensor
+
+def get_latest_sensor_data(db: Session):
+    """최신 센서 데이터 조회"""
+    return db.query(models.SensorData).order_by(models.SensorData.timestamp.desc()).first()

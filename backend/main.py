@@ -67,21 +67,57 @@ def read_users_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get
     if user is None:
         raise credentials_exception
     return user
-@app.get("/latest")
-def get_latest_data(db: Session = Depends(get_db)):
-    data = db.query(SensorData).order_by(SensorData.timestamp.desc()).first()
-    return {
-        "device_id": data.device_id,
-        "temperature": data.temperature,
-        "humidity": data.humidity,
-        "timestamp": data.timestamp
-    }
+
+@app.route('/receive-cmd', methods=['POST'])
+def receive_cmd():
+    data = request.get_json()
+    print(data)
+    return jsonify({"status": "received"})
+
+
+# from fastapi import APIRouter
+# import requests
+
+# router = APIRouter()
+
+# # RASPBERRY_PI_URL = "https://a4a6-113-198-180-236.ngrok-free.app/receive-cmd"  # 라즈베리 파이 주소
+# RASPBERRY_PI_URL = "https://a402-113-198-180-138.ngrok-free.app/receive-cmd"  # 라즈베리 파이 주소
+
+# @router.post("/send/open")
+# def send_open_command():
+#     print("✅ [DEBUG] /send/open 라우터에 도달함")
+#     try:
+#         res = requests.post(
+#             RASPBERRY_PI_URL,
+#             json={"action": "OPEN"},
+#             headers={"Content-Type": "application/json"}
+#         )
+#         print(f"✅ [DEBUG] 라즈베리 응답: {res.status_code}, {res.text}")
+#         return {"status": "success", "raspberry_response": res.json()}
+#     except Exception as e:
+#         print(f"❌ [DEBUG] 오류 발생: {e}")
+#         return {"status": "error", "message": str(e)}
+
+# @router.post("/send/close")
+# def send_close_command():
+#     print("🔧 CLOSE 명령 전송 시도 중")
+#     try:
+#         res = requests.post(
+#             RASPBERRY_PI_URL,
+#             json={"action": "CLOSE"},
+#             headers={"Content-Type": "application/json"}
+#         )
+#         print(f"✅ 응답 수신: {res.status_code}, {res.text}")
+#         return {"status": "success", "raspberry_response": res.json()}
+#     except Exception as e:
+#         print(f"❌ 에러 발생: {e}")
+#         return {"status": "error", "message": str(e)}
 from fastapi import APIRouter
 import requests
 
 router = APIRouter()
 
-RASPBERRY_PI_URL = "https://a4a6-113-198-180-236.ngrok-free.app/receive-cmd"  # 라즈베리 파이 주소
+RASPBERRY_PI_URL = "https://a402-113-198-180-138.ngrok-free.app/receive-cmd"
 
 @router.post("/send/open")
 def send_open_command():
@@ -93,7 +129,12 @@ def send_open_command():
             headers={"Content-Type": "application/json"}
         )
         print(f"✅ [DEBUG] 라즈베리 응답: {res.status_code}, {res.text}")
-        return {"status": "success", "raspberry_response": res.json()}
+
+        if "application/json" in res.headers.get("Content-Type", ""):
+            return {"status": "success", "raspberry_response": res.json()}
+        else:
+            return {"status": "error", "message": "응답이 JSON이 아님", "body": res.text}
+
     except Exception as e:
         print(f"❌ [DEBUG] 오류 발생: {e}")
         return {"status": "error", "message": str(e)}
@@ -108,11 +149,17 @@ def send_close_command():
             headers={"Content-Type": "application/json"}
         )
         print(f"✅ 응답 수신: {res.status_code}, {res.text}")
-        return {"status": "success", "raspberry_response": res.json()}
+
+        if "application/json" in res.headers.get("Content-Type", ""):
+            return {"status": "success", "raspberry_response": res.json()}
+        else:
+            return {"status": "error", "message": "응답이 JSON이 아님", "body": res.text}
+
     except Exception as e:
         print(f"❌ 에러 발생: {e}")
         return {"status": "error", "message": str(e)}
-# 데이터베이스 테이블 생성
+
+# # 데이터베이스 테이블 생성
 Base.metadata.create_all(bind=engine)
 
 
@@ -131,6 +178,7 @@ app.include_router(weather.router)
 app.include_router(dust.router)
 app.include_router(fetch.router)
 app.include_router(iot.router, prefix="/iot")
+
 # app.include_router(iot.router)  # ← 추가
 @app.on_event("startup")
 async def startup_event():

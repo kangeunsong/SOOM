@@ -18,6 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart'; // MyApp을 위해
 
 import '../services/wakeword_service.dart';
+import './soomi_screen.dart';
 
 final WakewordService _wakewordService = WakewordService();
 
@@ -320,25 +321,28 @@ class _HomeScreenState extends State<HomeScreen> {
     _startSensorMonitoring();
 
     _wakewordService.initWakeWord((index) {
-      _showWakeWordPopup(); // 웨이크워드 감지 시 UI(팝업창) 처리
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => SoomiScreen()),
+      );
     });
   }
 
-  void _showWakeWordPopup() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('웨이크워드 감지!'),
-        content: const Text('안녕하세요!'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('확인'),
-          ),
-        ],
-      ),
-    );
-  }
+  // void _showWakeWordPopup() {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: const Text('웨이크워드 감지!'),
+  //       content: const Text('안녕하세요!'),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => Navigator.of(context).pop(),
+  //           child: const Text('확인'),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   /// 위치 기반으로 가장 가까운 지역 자동 설정
   void _autoSetNearestLocation() async {

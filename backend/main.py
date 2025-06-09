@@ -1,29 +1,41 @@
-from backend.api import iot
+from api import iot
+from api import fetch, weather, dust
+from api.chatGPT_API import callChatGPT
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from .database import SessionLocal, engine
-from .api import fetch  # ← 추가
+from .api import fetch
 from jose import JWTError, jwt
 from datetime import timedelta
-from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from .api import weather, dust
 from .models import Base
 from .database import engine
 from .scheduler import start_scheduler
-from .import models
-from .import schemas
-from .import crud
+from . import models, schemas, crud
 
-models.Base.metadata.create_all(bind=engine)
+from fastapi import APIRouter
+import requests
+import json
+from api.chatGPT_API import callChatGPT
+print("🧮🧮🧮🧮🧮 I'm in main.py 🧮🧮🧮🧮🧮")
 
+# FastAPI 앱 초기화
 app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-print("📌 등록된 라우트 목록:")
-for route in app.router.routes:
-    print(f"{route.path} → {route.name}")
+
+# DB 모델 초기화
+models.Base.metadata.create_all(bind=engine)
+
+# 라우터 객체 생성
+router = APIRouter()
+
+# 라즈베리파이 명령 수신 URL
+RASPBERRY_PI_URL = "https://a402-113-198-180-138.ngrok-free.app/receive-cmd"
+
+# DB 세션 함수
 def get_db():
     db = SessionLocal()
     try:
@@ -31,6 +43,7 @@ def get_db():
     finally:
         db.close()
 
+# 회원가입
 @app.post("/signup", response_model=schemas.UserOut)
 def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = crud.get_user_by_username(db, user.username)
@@ -38,7 +51,7 @@ def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Username already registered")
     return crud.create_user(db, user)
 
-
+# 로그인
 @app.post("/token", response_model=schemas.Token)
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = crud.authenticate_user(db, form_data.username, form_data.password)
@@ -50,6 +63,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+# 사용자 정보 가져오기
 @app.get("/users/me", response_model=schemas.UserOut)
 def read_users_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
@@ -68,67 +82,21 @@ def read_users_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get
         raise credentials_exception
     return user
 
-@app.route('/receive-cmd', methods=['POST'])
-def receive_cmd():
-    data = request.get_json()
+# 명령 수신 테스트용
+@app.post("/receive-cmd")
+def receive_cmd(data: dict):
     print(data)
-    return jsonify({"status": "received"})
+    return {"status": "received"}
 
-
-# from fastapi import APIRouter
-# import requests
-
-# router = APIRouter()
-
-# # RASPBERRY_PI_URL = "https://a4a6-113-198-180-236.ngrok-free.app/receive-cmd"  # 라즈베리 파이 주소
-# RASPBERRY_PI_URL = "https://a402-113-198-180-138.ngrok-free.app/receive-cmd"  # 라즈베리 파이 주소
-
-# @router.post("/send/open")
-# def send_open_command():
-#     print("✅ [DEBUG] /send/open 라우터에 도달함")
-#     try:
-#         res = requests.post(
-#             RASPBERRY_PI_URL,
-#             json={"action": "OPEN"},
-#             headers={"Content-Type": "application/json"}
-#         )
-#         print(f"✅ [DEBUG] 라즈베리 응답: {res.status_code}, {res.text}")
-#         return {"status": "success", "raspberry_response": res.json()}
-#     except Exception as e:
-#         print(f"❌ [DEBUG] 오류 발생: {e}")
-#         return {"status": "error", "message": str(e)}
-
-# @router.post("/send/close")
-# def send_close_command():
-#     print("🔧 CLOSE 명령 전송 시도 중")
-#     try:
-#         res = requests.post(
-#             RASPBERRY_PI_URL,
-#             json={"action": "CLOSE"},
-#             headers={"Content-Type": "application/json"}
-#         )
-#         print(f"✅ 응답 수신: {res.status_code}, {res.text}")
-#         return {"status": "success", "raspberry_response": res.json()}
-#     except Exception as e:
-#         print(f"❌ 에러 발생: {e}")
-#         return {"status": "error", "message": str(e)}
-from fastapi import APIRouter
-import requests
-
-router = APIRouter()
-
-RASPBERRY_PI_URL = "https://a402-113-198-180-138.ngrok-free.app/receive-cmd"
-
-@router.post("/send/open")
-def send_open_command():
-    print("✅ [DEBUG] /send/open 라우터에 도달함")
+# 라즈베리파이 명령 전송 공통 함수
+def send_window_command(action: str):
     try:
         res = requests.post(
             RASPBERRY_PI_URL,
-            json={"action": "OPEN"},
+            json={"action": action.upper()},
             headers={"Content-Type": "application/json"}
         )
-        print(f"✅ [DEBUG] 라즈베리 응답: {res.status_code}, {res.text}")
+        print(f"✅ 라즈베리 응답: {res.status_code}, {res.text}")
 
         if "application/json" in res.headers.get("Content-Type", ""):
             return {"status": "success", "raspberry_response": res.json()}
@@ -136,37 +104,54 @@ def send_open_command():
             return {"status": "error", "message": "응답이 JSON이 아님", "body": res.text}
 
     except Exception as e:
-        print(f"❌ [DEBUG] 오류 발생: {e}")
+        print(f"❌ 명령 전송 에러: {e}")
         return {"status": "error", "message": str(e)}
+
+from fastapi import Form
+# ChatGPT 명령 처리 라우트
+@app.post("/iot/chat-command")
+def process_chat_command(text: str = Form(...)):
+    print("📨 /iot/chat-command 호출됨")
+    try:
+        gpt_response = callChatGPT(text)
+        print(f"[GPT 응답 원문]: {gpt_response}")
+        parsed = json.loads(gpt_response)
+        action = parsed.get("action")
+        message = parsed.get("message")
+
+        if action == "open":
+            raspberry_result = send_window_command("OPEN")
+        elif action == "close":
+            raspberry_result = send_window_command("CLOSE")
+        else:
+            return {"action": action, "message": message}
+
+        return {
+            "action": action,
+            "message": message,
+            "raspberry_result": raspberry_result
+        }
+
+    except json.JSONDecodeError:
+        return {"error": "응답 파싱 실패", "raw": gpt_response}
+    except Exception as e:
+        print(f"[ERROR] ChatGPT 호출 실패: {e}")
+        return {"error": str(e)}
+
+
+# 기존 라우트들도 유지
+@router.post("/send/open")
+def send_open_command():
+    return send_window_command("OPEN")
 
 @router.post("/send/close")
 def send_close_command():
-    print("🔧 CLOSE 명령 전송 시도 중")
-    try:
-        res = requests.post(
-            RASPBERRY_PI_URL,
-            json={"action": "CLOSE"},
-            headers={"Content-Type": "application/json"}
-        )
-        print(f"✅ 응답 수신: {res.status_code}, {res.text}")
-
-        if "application/json" in res.headers.get("Content-Type", ""):
-            return {"status": "success", "raspberry_response": res.json()}
-        else:
-            return {"status": "error", "message": "응답이 JSON이 아님", "body": res.text}
-
-    except Exception as e:
-        print(f"❌ 에러 발생: {e}")
-        return {"status": "error", "message": str(e)}
-
-# # 데이터베이스 테이블 생성
-Base.metadata.create_all(bind=engine)
-
+    return send_window_command("CLOSE")
 
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 실제 배포 시 구체적인 도메인으로 제한해야 함
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -179,21 +164,20 @@ app.include_router(dust.router)
 app.include_router(fetch.router)
 app.include_router(iot.router, prefix="/iot")
 
-# app.include_router(iot.router)  # ← 추가
+# 스케줄러 설정
 @app.on_event("startup")
 async def startup_event():
-    """애플리케이션 시작 시 스케줄러 시작"""
     app.state.scheduler = start_scheduler()
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    """애플리케이션 종료 시 스케줄러 종료"""
     app.state.scheduler.shutdown()
 
+# 루트 테스트
 @app.get("/")
 def read_root():
     return {"message": "날씨 & 미세먼지 API 서버가 실행 중입니다."}
 
+# 실행
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
-

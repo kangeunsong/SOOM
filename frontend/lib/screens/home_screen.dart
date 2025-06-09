@@ -18,6 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart'; // MyApp을 위해
 
 import '../services/wakeword_service.dart';
+import 'soomi_screen.dart';
 
 final WakewordService _wakewordService = WakewordService();
 
@@ -319,8 +320,15 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadUsername();
     _startSensorMonitoring();
 
+    // 웨이크 워드 감지 시 SoomiScreen 화면으로 넘어가게
     _wakewordService.initWakeWord((index) {
-      _showWakeWordPopup(); // 웨이크워드 감지 시 UI(팝업창) 처리
+      // _showWakeWordPopup(); // 웨이크워드 감지 시 UI(팝업창) 처리
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const SoomiScreen(),
+        ),
+      );
     });
   }
 

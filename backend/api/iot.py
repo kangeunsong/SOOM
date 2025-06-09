@@ -1,7 +1,7 @@
 from http.client import HTTPException
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
-from .. import crud, schemas, database
+import crud, schemas, database
 from datetime import datetime
 router = APIRouter()
 from fastapi import APIRouter, Request, HTTPException

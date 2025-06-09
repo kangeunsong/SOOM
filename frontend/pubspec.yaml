@@ -18,6 +18,8 @@ dependencies:
   porcupine_flutter: ^3.0.3
   permission_handler: ^11.0.1
   flutter_secure_storage: ^8.0.0
+  flutter_tts: ^3.8.5
+  speech_to_text: ^6.6.0
 
 dev_dependencies:
   flutter_test:

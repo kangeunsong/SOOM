@@ -18,6 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart'; // MyApp을 위해
 
 import '../services/wakeword_service.dart';
+import 'soomi_screen.dart';
 
 final WakewordService _wakewordService = WakewordService();
 
@@ -2151,7 +2152,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                       Expanded(
                                         child: ElevatedButton.icon(
                                           onPressed: () =>
-                                              _handleVentilationAction(true),
+                                              // _handleVentilationAction(true),
+                                              Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  const SoomiScreen(),
+                                            ),
+                                          ),
                                           icon: const Icon(Icons.window,
                                               size: 20),
                                           label: const Text('창문 열기',

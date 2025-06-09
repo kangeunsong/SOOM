@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from ..database import get_db
-from ..models import AirQuality
+from database import get_db
+from models import AirQuality
 from ..services.dust_service import DustService
 from datetime import datetime, timedelta
-from .. import schemas
+import schemas
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 router = APIRouter(

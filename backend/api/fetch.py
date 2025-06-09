@@ -1,7 +1,7 @@
 # backend/api/fetch.py
 
 from fastapi import APIRouter, Depends
-from backend.scheduler import fetch_and_save_data  # 비동기 함수 직접 호출
+from scheduler import fetch_and_save_data  # 비동기 함수 직접 호출
 import asyncio
 
 router = APIRouter()

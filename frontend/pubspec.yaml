@@ -27,5 +27,4 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/soomiya_ko_android_v3_0_0.ppn
-    - assets/porcupine_params_ko.pv
+    - assets/

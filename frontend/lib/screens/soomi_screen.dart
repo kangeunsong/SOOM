@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:flutter_tts/flutter_tts.dart';
-import 'dart:math';
+import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart' show rootBundle;
+import 'dart:convert';
+import 'dart:io';
 
 class SoomiScreen extends StatefulWidget {
   const SoomiScreen({super.key});
@@ -16,20 +19,62 @@ class _SoomiScreenState extends State<SoomiScreen> {
 
   bool _isListening = false;
   bool _isSpeaking = false;
+  bool _isProcessing = false; // ChatGPT 처리 중 상태
   String _recognizedText = "";
   double _soundLevel = 0.0;
   List<String> _messages = [];
+
+  // ChatGPT API 설정 (파일에서 읽어올 예정)
+  String _apiKey = '';
+  String _systemPrompt = '';
+  bool _configLoadFailed = false; // 설정 로드 실패 상태
+  final String _apiUrl = 'https://api.openai.com/v1/chat/completions';
 
   @override
   void initState() {
     super.initState();
     _speech = stt.SpeechToText();
     _initTts();
+    _loadConfigFiles();
+  }
 
-    // 화면 진입 시 자동으로 음성 인식 시작
-    Future.delayed(const Duration(milliseconds: 1000), () {
-      _startListening();
-    });
+  // 외부 파일에서 설정 읽어오기
+  Future<void> _loadConfigFiles() async {
+    try {
+      // API 키 읽기
+      final apiKeyContent = await rootBundle.loadString('assets/apikey.txt');
+      _apiKey = apiKeyContent.trim();
+      print("✅ API 키 로드 완료");
+
+      // 프롬프트 읽기
+      final promptContent = await rootBundle.loadString('assets/prompt.txt');
+      _systemPrompt = promptContent.trim();
+      print("✅ 프롬프트 로드 완료");
+
+      // 설정 로드 성공 시 환영 메시지 재생 후 음성 인식 시작
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        if (mounted) {
+          _playWelcomeMessage();
+        }
+      });
+    } catch (e) {
+      print("❌ 설정 파일 로드 실패: $e");
+      print("⚠️ API 키와 프롬프트가 로드되지 않았습니다. 홈 화면으로 돌아갑니다.");
+
+      setState(() {
+        _configLoadFailed = true;
+      });
+
+      // 오류 발생시 홈 화면으로 돌아가기
+      if (mounted) {
+        // 잠시 대기 후 돌아가기 (오류 메시지를 보여주기 위해)
+        Future.delayed(const Duration(milliseconds: 2000), () {
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        });
+      }
+    }
   }
 
   Future<void> _initTts() async {
@@ -43,7 +88,31 @@ class _SoomiScreenState extends State<SoomiScreen> {
       setState(() {
         _isSpeaking = false;
       });
+
+      // TTS 완료 후 자동으로 음성 인식 시작 (환영 메시지인 경우)
+      if (!_isListening && !_isProcessing && _messages.isNotEmpty) {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted && !_isListening && !_isProcessing) {
+            _startListening();
+          }
+        });
+      }
     });
+  }
+
+  // 환영 메시지 재생
+  Future<void> _playWelcomeMessage() async {
+    const welcomeMessage = "안녕하세요! 수미입니다. 무엇을 도와드릴까요?";
+
+    setState(() {
+      _isSpeaking = true;
+      _messages.add("Soomi: $welcomeMessage");
+    });
+
+    print("🔊 환영 메시지 재생: $welcomeMessage");
+
+    // TTS로 환영 메시지 재생
+    await _flutterTts.speak(welcomeMessage);
   }
 
   void _startListening() async {
@@ -115,6 +184,73 @@ class _SoomiScreenState extends State<SoomiScreen> {
     _resumeWakewordService(); // 수동 중지 시 웨이크워드 서비스 재시작
   }
 
+  // ChatGPT API 호출 함수
+  Future<Map<String, dynamic>?> _callChatGPT(String userMessage) async {
+    try {
+      print("🤖 ChatGPT API 호출 시작: $userMessage");
+
+      final response = await http.post(
+        Uri.parse(_apiUrl),
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Authorization': 'Bearer $_apiKey',
+          'Accept': 'application/json',
+        },
+        body: utf8.encode(jsonEncode({
+          'model': 'gpt-3.5-turbo',
+          'messages': [
+            {
+              'role': 'system',
+              'content': _systemPrompt,
+            },
+            {
+              'role': 'user',
+              'content': userMessage,
+            }
+          ],
+          'max_tokens': 150,
+          'temperature': 0.7,
+        })),
+      );
+
+      print("📡 ChatGPT API 응답 상태: ${response.statusCode}");
+
+      if (response.statusCode == 200) {
+        // UTF-8로 응답 디코딩
+        final responseBody = utf8.decode(response.bodyBytes);
+        print("🔄 UTF-8 디코딩된 응답: $responseBody");
+
+        final data = jsonDecode(responseBody);
+        final content = data['choices'][0]['message']['content'];
+        print("🤖 ChatGPT 원본 응답: $content");
+
+        // JSON 파싱 시도
+        try {
+          final jsonResponse = jsonDecode(content);
+          print("✅ JSON 파싱 성공: $jsonResponse");
+
+          // 메시지 내용도 올바르게 디코딩되었는지 확인
+          final message = jsonResponse['message'] ?? '';
+          print("📝 디코딩된 메시지: $message");
+
+          return jsonResponse;
+        } catch (e) {
+          print("❌ JSON 파싱 실패: $e");
+          print("📄 파싱 시도한 내용: $content");
+          // JSON 파싱 실패 시 기본 응답
+          return {'action': 'none', 'message': '죄송해요, 응답을 처리하는 중 오류가 발생했어요.'};
+        }
+      } else {
+        final errorBody = utf8.decode(response.bodyBytes);
+        print("❌ ChatGPT API 오류: ${response.statusCode} - $errorBody");
+        return {'action': 'none', 'message': '죄송해요, 서버와 연결하는 중 오류가 발생했어요.'};
+      }
+    } catch (e) {
+      print("💥 ChatGPT API 호출 실패: $e");
+      return {'action': 'none', 'message': '죄송해요, 네트워크 오류가 발생했어요.'};
+    }
+  }
+
   void _sendMessage() async {
     if (_recognizedText.isNotEmpty) {
       print("📤 메시지 전송: $_recognizedText");
@@ -122,20 +258,41 @@ class _SoomiScreenState extends State<SoomiScreen> {
       setState(() {
         _messages.add("나: $_recognizedText");
         _isListening = false;
-        _isSpeaking = true;
+        _isProcessing = true; // 처리 중 상태 시작
       });
 
       _speech.stop();
 
-      // 간단한 응답
-      String response = "네, '$_recognizedText'라고 말씀하셨군요!";
+      // ChatGPT API 호출
+      final chatGptResponse = await _callChatGPT(_recognizedText);
 
-      setState(() {
-        _messages.add("Soomi: $response");
-      });
+      if (chatGptResponse != null) {
+        final String action = chatGptResponse['action'] ?? 'none';
+        final String message = chatGptResponse['message'] ?? '응답을 받을 수 없습니다.';
 
-      // TTS로 응답 재생
-      await _flutterTts.speak(response);
+        // 터미널에 action 출력
+        print("🎯 ACTION: $action");
+
+        setState(() {
+          _messages.add("Soomi: $message");
+          _isProcessing = false; // 처리 완료
+          _isSpeaking = true;
+        });
+
+        // TTS로 응답 재생
+        await _flutterTts.speak(message);
+
+        // action에 따른 추가 동작 (필요한 경우)
+        _handleAction(action);
+      } else {
+        setState(() {
+          _messages.add("Soomi: 죄송해요, 응답을 받을 수 없습니다.");
+          _isProcessing = false;
+          _isSpeaking = true;
+        });
+
+        await _flutterTts.speak("죄송해요, 응답을 받을 수 없습니다.");
+      }
 
       setState(() {
         _recognizedText = "";
@@ -145,11 +302,30 @@ class _SoomiScreenState extends State<SoomiScreen> {
     }
   }
 
+  // action에 따른 추가 처리
+  void _handleAction(String action) {
+    switch (action) {
+      case 'open':
+        print("🪟 창문 열기 동작 실행");
+        // 여기에 실제 창문 제어 로직 추가
+        break;
+      case 'close':
+        print("🪟 창문 닫기 동작 실행");
+        // 여기에 실제 창문 제어 로직 추가
+        break;
+      case 'greet':
+        print("👋 인사 동작");
+        break;
+      case 'none':
+      default:
+        print("❓ 알 수 없는 동작");
+        break;
+    }
+  }
+
   // 웨이크워드 서비스 일시 중지 (마이크 해제)
   Future<void> _pauseWakewordService() async {
     try {
-      // Navigator를 통해 이전 화면(HomeScreen)의 WakewordService에 접근
-      // 이 부분은 실제 구현에 따라 달라질 수 있습니다
       print("⏸️ 웨이크워드 서비스 일시 중지");
       // 실제로는 HomeScreen이나 상위 위젯에서 웨이크워드 서비스를 제어해야 합니다
     } catch (e) {
@@ -196,25 +372,32 @@ class _SoomiScreenState extends State<SoomiScreen> {
         children: [
           Column(
             children: [
-              // 마이크 충돌 경고
+              // 설정 정보 표시
               Container(
                 padding: const EdgeInsets.all(12.0),
                 margin: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
-                  color: Colors.orange[50],
+                  color: _configLoadFailed ? Colors.red[50] : Colors.blue[50],
                   borderRadius: BorderRadius.circular(8.0),
-                  border: Border.all(color: Colors.orange[200]!),
+                  border: Border.all(
+                      color: _configLoadFailed
+                          ? Colors.red[200]!
+                          : Colors.blue[200]!),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.info, color: Colors.orange, size: 20),
-                    SizedBox(width: 8),
+                    Icon(_configLoadFailed ? Icons.error : Icons.smart_toy,
+                        color: _configLoadFailed ? Colors.red : Colors.blue,
+                        size: 20),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        '웨이크워드 서비스와 마이크를 공유합니다. 음성 인식 중에는 웨이크워드가 일시 중지됩니다.',
+                        _configLoadFailed
+                            ? '❌ 설정 파일 로드 실패\n2초 후 홈 화면으로 돌아갑니다...'
+                            : 'ChatGPT와 연동된 음성 대화가 가능합니다.\nAPI 키: ${_apiKey.isNotEmpty ? "✅ 로드됨" : "❌ 로드 실패"} | 프롬프트: ${_systemPrompt.isNotEmpty ? "✅ 로드됨" : "❌ 로드 실패"}',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.orange,
+                          color: _configLoadFailed ? Colors.red : Colors.blue,
                         ),
                       ),
                     ),
@@ -224,47 +407,79 @@ class _SoomiScreenState extends State<SoomiScreen> {
 
               // 메시지 목록
               Expanded(
-                child: _messages.isEmpty
+                child: _configLoadFailed
                     ? const Center(
-                        child: Text(
-                          '자동 음성 인식이 활성화되었습니다!\n\n5초마다 자동으로 음성을 인식합니다.\n말씀해 주세요!',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16.0),
-                        itemCount: _messages.length,
-                        itemBuilder: (context, index) {
-                          bool isUser = _messages[index].startsWith("나:");
-                          return Align(
-                            alignment: isUser
-                                ? Alignment.centerRight
-                                : Alignment.centerLeft,
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 4.0),
-                              padding: const EdgeInsets.all(12.0),
-                              decoration: BoxDecoration(
-                                color: isUser
-                                    ? Colors.blue[100]
-                                    : Colors.grey[200],
-                                borderRadius: BorderRadius.circular(12.0),
-                              ),
-                              child: Text(
-                                _messages[index],
-                                style: const TextStyle(fontSize: 16),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: Colors.red,
+                            ),
+                            SizedBox(height: 16),
+                            Text(
+                              '설정 파일을 찾을 수 없습니다',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red,
                               ),
                             ),
-                          );
-                        },
-                      ),
+                            SizedBox(height: 8),
+                            Text(
+                              'assets/apikey.txt와 assets/prompt.txt\n파일을 확인해주세요',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      )
+                    : _messages.isEmpty
+                        ? const Center(
+                            child: Text(
+                              '자동 음성 인식이 활성화되었습니다!\n\nChatGPT와 연동된 수미와 대화해보세요.\n"수미야", "창문 열어줘", "환기 해줘" 등을 말해보세요!',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.all(16.0),
+                            itemCount: _messages.length,
+                            itemBuilder: (context, index) {
+                              bool isUser = _messages[index].startsWith("나:");
+                              return Align(
+                                alignment: isUser
+                                    ? Alignment.centerRight
+                                    : Alignment.centerLeft,
+                                child: Container(
+                                  margin:
+                                      const EdgeInsets.symmetric(vertical: 4.0),
+                                  padding: const EdgeInsets.all(12.0),
+                                  decoration: BoxDecoration(
+                                    color: isUser
+                                        ? Colors.blue[100]
+                                        : Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(12.0),
+                                  ),
+                                  child: Text(
+                                    _messages[index],
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
               ),
 
               // 현재 인식된 텍스트 표시
-              if (_recognizedText.isNotEmpty)
+              if (_recognizedText.isNotEmpty && !_configLoadFailed)
                 Container(
                   padding: const EdgeInsets.all(16.0),
                   margin: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -291,44 +506,74 @@ class _SoomiScreenState extends State<SoomiScreen> {
                 ),
 
               // 상태 표시
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 12.0),
-                child: Text(
-                  _isListening
-                      ? '🎤 듣고 있습니다... 말씀해 주세요!'
-                      : _isSpeaking
-                          ? '🔊 응답 중...'
-                          : '음성 인식 대기 중 (웨이크워드 활성화)',
-                  style: TextStyle(
-                    color: _isListening ? Colors.red : Colors.grey[600],
-                    fontWeight: FontWeight.w500,
+              if (!_configLoadFailed)
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12.0),
+                  child: Text(
+                    _isListening
+                        ? '🎤 듣고 있습니다... 말씀해 주세요!'
+                        : _isProcessing
+                            ? '🤖 ChatGPT 처리 중...'
+                            : _isSpeaking
+                                ? '🔊 응답 중...'
+                                : '음성 인식 대기 중 (웨이크워드 활성화)',
+                    style: TextStyle(
+                      color: _isListening
+                          ? Colors.red
+                          : _isProcessing
+                              ? Colors.purple
+                              : Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
-              ),
 
               const SizedBox(height: 100), // FloatingActionButton 공간
             ],
           ),
 
-          // 음성 파형 표시
-          if (_isListening)
+          // 처리 중 로딩 표시
+          if (_isProcessing && !_configLoadFailed)
             Positioned(
               bottom: 120,
               left: 0,
               right: 0,
               child: Center(
                 child: Container(
-                  width: 120,
-                  height: 60,
-                  child: CustomPaint(
-                    painter: SoundWavePainter(_soundLevel),
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: Colors.purple[50],
+                    borderRadius: BorderRadius.circular(12.0),
+                    border: Border.all(color: Colors.purple[200]!),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.purple),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        'ChatGPT가 생각하고 있어요...',
+                        style: TextStyle(
+                          color: Colors.purple,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
         ],
       ),
-      floatingActionButton: _buildRecordingButton(),
+      floatingActionButton: _configLoadFailed ? null : _buildRecordingButton(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
@@ -345,19 +590,30 @@ class _SoomiScreenState extends State<SoomiScreen> {
             height: 80.0,
             child: FloatingActionButton(
               heroTag: "main_button",
-              onPressed: _isListening ? _sendMessage : _startListening,
+              onPressed: _isProcessing
+                  ? null
+                  : (_isListening ? _sendMessage : _startListening),
               backgroundColor: _isListening ? Colors.green : Colors.blue,
               elevation: 4,
-              child: Icon(
-                _isListening ? Icons.send : Icons.mic,
-                size: 40,
-                color: Colors.white,
-              ),
+              child: _isProcessing
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Icon(
+                      _isListening ? Icons.send : Icons.mic,
+                      size: 40,
+                      color: Colors.white,
+                    ),
             ),
           ),
 
           // 중지 버튼 (듣고 있을 때만 표시)
-          if (_isListening)
+          if (_isListening && !_isProcessing)
             Positioned(
               bottom: 0,
               right: 90,
@@ -381,49 +637,4 @@ class _SoomiScreenState extends State<SoomiScreen> {
       ),
     );
   }
-}
-
-// 음성 파형을 그리는 CustomPainter
-class SoundWavePainter extends CustomPainter {
-  final double soundLevel;
-  double smoothedSoundLevel = 0.0;
-
-  SoundWavePainter(this.soundLevel);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.blue
-      ..style = PaintingStyle.fill;
-
-    final barCount = 12;
-    final barWidth = 8.0;
-    final spacing = 4.0;
-    final maxHeight = 30.0;
-    final minHeight = 5.0;
-    final cornerRadius = const Radius.circular(4.0);
-    final random = Random();
-
-    // 부드러운 애니메이션을 위한 스무딩
-    smoothedSoundLevel = smoothedSoundLevel * 0.3 + soundLevel * 0.7;
-
-    for (int i = 0; i < barCount; i++) {
-      final randomFactor = 0.8 + random.nextDouble() * 0.4;
-      final normalizedLevel = max(0.1, smoothedSoundLevel + 10) / 20; // 정규화
-      final barHeight =
-          max(minHeight, normalizedLevel * maxHeight * randomFactor);
-      final x = i * (barWidth + spacing);
-      final y = (size.height / 2) - (barHeight / 2);
-
-      final rRect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(x, y, barWidth, barHeight),
-        cornerRadius,
-      );
-
-      canvas.drawRRect(rRect, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

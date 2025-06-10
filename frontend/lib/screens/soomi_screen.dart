@@ -25,6 +25,11 @@ class _SoomiScreenState extends State<SoomiScreen> {
     super.initState();
     _speech = stt.SpeechToText();
     _initTts();
+
+    // 화면 진입 시 자동으로 음성 인식 시작
+    Future.delayed(const Duration(milliseconds: 1000), () {
+      _startListening();
+    });
   }
 
   Future<void> _initTts() async {
@@ -222,7 +227,7 @@ class _SoomiScreenState extends State<SoomiScreen> {
                 child: _messages.isEmpty
                     ? const Center(
                         child: Text(
-                          '마이크 버튼을 눌러 대화를 시작하세요!\n\n⚠️ 웨이크워드 서비스가 활성화되어 있으면\n마이크 충돌이 발생할 수 있습니다.',
+                          '자동 음성 인식이 활성화되었습니다!\n\n5초마다 자동으로 음성을 인식합니다.\n말씀해 주세요!',
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.grey,

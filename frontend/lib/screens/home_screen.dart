@@ -322,13 +322,49 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // 웨이크 워드 감지 시 SoomiScreen 화면으로 넘어가게
     _wakewordService.initWakeWord((index) {
-      // _showWakeWordPopup(); // 웨이크워드 감지 시 UI(팝업창) 처리
+      // 🔥 SoomiScreen으로 이동하기 전에 웨이크워드 서비스 중지
+      _wakewordService.stop();
+
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => const SoomiScreen(),
         ),
-      );
+      ).then((_) {
+        // 🔥 SoomiScreen에서 돌아오면 웨이크워드 서비스 재시작
+        Future.delayed(const Duration(milliseconds: 500), () {
+          _wakewordService.initWakeWord((index) {
+            // 재귀적으로 다시 웨이크워드 감지 설정
+            _wakewordService.stop();
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const SoomiScreen(),
+              ),
+            ).then((_) {
+              // 다시 웨이크워드 서비스 재시작
+              _restartWakewordService();
+            });
+          });
+        });
+      });
+    });
+  }
+
+// 🔥 웨이크워드 서비스 재시작을 위한 별도 메서드
+  void _restartWakewordService() {
+    _wakewordService.initWakeWord((index) {
+      _wakewordService.stop();
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const SoomiScreen(),
+        ),
+      ).then((_) {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          _restartWakewordService(); // 재귀 호출
+        });
+      });
     });
   }
 

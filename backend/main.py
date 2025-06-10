@@ -124,7 +124,7 @@ import requests
 
 router = APIRouter()
 
-RASPBERRY_PI_URL = "https://d5f3-113-198-180-154.ngrok-free.app/receive-cmd"
+RASPBERRY_PI_URL = "https://3f7f-113-198-180-220.ngrok-free.app/receive-cmd"
 
 @router.post("/send/open")
 def send_open_command():

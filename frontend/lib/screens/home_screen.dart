@@ -111,13 +111,14 @@ class _HomeScreenState extends State<HomeScreen> {
   DateTime? _lastAutoAction; // 마지막 자동 동작 시간
   static const Duration AUTO_ACTION_COOLDOWN =
       Duration(minutes: 10); // 자동 동작 간격
+  static const int LIGHT_DIGITAL_DARK = 1; // 어두움 (0에서 1로 변경)
+  static const int LIGHT_DIGITAL_BRIGHT = 0; // 밝음 (1에서 0으로 변경)
 
   // 센서 임계값 설정 (더 세밀하게 조정)
   static const int LIGHT_THRESHOLD_DARK = 150; // 어두워지는 기준 (낮아짐)
   // static const int LIGHT_THRESHOLD_BRIGHT = 400; // 밝아지는 기준 (높아짐)
   // static const int LIGHT_CHANGE_THRESHOLD = 100; // 급격한 조도 변화 기준
-  static const int LIGHT_DIGITAL_DARK = 0; // 어두움
-  static const int LIGHT_DIGITAL_BRIGHT = 1; // 밝음
+
   static const int GAS_THRESHOLD_HIGH = 300; // 가스 농도 높음 기준 (낮춤)
   static const int GAS_THRESHOLD_NORMAL = 100; // 가스 농도 정상 기준
   static const int GAS_CHANGE_THRESHOLD = 50; // 급격한 가스 변화 기준
@@ -580,41 +581,38 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     // 기존 조도 변화 분석 부분을 다음과 같이 교체:
-    if (old.light != null && current.light != null) {
-      // 어두워짐 감지 (1 → 0)
-      if (old.light == LIGHT_DIGITAL_BRIGHT &&
-          current.light == LIGHT_DIGITAL_DARK) {
-        if (_shouldCloseWindowAtNight()) {
-          if (_autoControlEnabled && _shouldPerformAutoAction()) {
-            Future.microtask(() => _performAutoWindowControl(false, "야간 시간대"));
-          }
-          return SensorAnalysis(
-            shouldOpenWindow: false,
-            reason: "🌙 어두워졌습니다.\n${_getCloseWindowReason()}\n창문을 닫는 것을 권장합니다.",
-            urgency: "medium",
-            color: Colors.blue,
-          );
-        }
+ if (old.light != null && current.light != null) {
+  // 어두워짐 감지 (0 → 1)  // 기존: (1 → 0)
+  if (old.light == LIGHT_DIGITAL_BRIGHT &&
+      current.light == LIGHT_DIGITAL_DARK) {
+    if (_shouldCloseWindowAtNight()) {
+      if (_autoControlEnabled && _shouldPerformAutoAction()) {
+        Future.microtask(() => _performAutoWindowControl(false, "야간 시간대"));
       }
-
-      // 밝아짐 감지 (0 → 1)
-      else if (old.light == LIGHT_DIGITAL_DARK &&
-          current.light == LIGHT_DIGITAL_BRIGHT) {
-        if (_shouldOpenWindowInMorning(current)) {
-          if (_autoControlEnabled && _shouldPerformAutoAction()) {
-            Future.microtask(() => _performAutoWindowControl(true, "아침 환기"));
-          }
-          return SensorAnalysis(
-            shouldOpenWindow: true,
-            reason:
-                "☀️ 밝아졌습니다!\n실내 공기질이 양호하고 환기하기 좋은 시간입니다.\n신선한 공기를 위해 창문을 여는 것을 권장합니다.",
-            urgency: "low",
-            color: Colors.green,
-          );
-        }
-      }
+      return SensorAnalysis(
+        shouldOpenWindow: false,
+        reason: "🌙 어두워졌습니다.\n${_getCloseWindowReason()}\n창문을 닫는 것을 권장합니다.",
+        urgency: "medium",
+        color: Colors.blue,
+      );
     }
-
+  }  // 밝아짐 감지 (1 → 0)  // 기존: (0 → 1)
+  else if (old.light == LIGHT_DIGITAL_DARK &&
+           current.light == LIGHT_DIGITAL_BRIGHT) {
+    if (_shouldOpenWindowInMorning(current)) {
+      if (_autoControlEnabled && _shouldPerformAutoAction()) {
+        Future.microtask(() => _performAutoWindowControl(true, "아침 환기"));
+      }
+      return SensorAnalysis(
+        shouldOpenWindow: true,
+        reason:
+            "☀️ 밝아졌습니다!\n실내 공기질이 양호하고 환기하기 좋은 시간입니다.\n신선한 공기를 위해 창문을 여는 것을 권장합니다.",
+        urgency: "low",
+        color: Colors.green,
+      );
+    }
+  }
+}
 // 3. 움직임 감지 시 적응형 제어 (완전히 개선된 버전)
     if (old.pir != current.pir && current.pir == 1) {
       print("👤 움직임 감지됨 - 분석 시작");
@@ -1112,7 +1110,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icons.lightbulb,
                 label: '조도',
                 value:
-                    _lastSensorData!.light == 1 ? '밝음' : '어두움', // 숫자 대신 텍스트로 표시
+                   _lastSensorData!.light == 0 ? '밝음' : '어두움', // 0일때 밝음, 1일때 어두움
                 color: _getLightColor(_lastSensorData!.light!),
               ),
             ),
@@ -1383,11 +1381,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Color _getLightColor(int light) {
-    if (light == LIGHT_DIGITAL_DARK) return Colors.indigo; // 어두움
-    if (light == LIGHT_DIGITAL_BRIGHT) return Colors.amber; // 밝음
-    return Colors.grey; // 기본값
-  }
+ Color _getLightColor(int light) {
+  if (light == LIGHT_DIGITAL_DARK) return Colors.indigo; // 어두움 (1)
+  if (light == LIGHT_DIGITAL_BRIGHT) return Colors.amber; // 밝음 (0)
+  return Colors.grey; // 기본값
+}
+
 
   Color _getGasColor(int gas) {
     if (gas > GAS_THRESHOLD_HIGH) return Colors.red;
@@ -2068,7 +2067,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   label: '조도',
                                                   value:
                                                       _lastSensorData!.light ==
-                                                              1
+                                                            0
                                                           ? '밝음'
                                                           : '어두움',
                                                   color: _getLightColor(
@@ -2341,17 +2340,17 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                     ],
                   ),
-                  child: data.light != null
-                      ? Icon(
-                          data.light == 1 ? Icons.wb_sunny : Icons.nights_stay,
-                          color: Colors.white,
-                          size: 10,
-                        )
-                      : const Icon(
-                          Icons.help_outline,
-                          color: Colors.white,
-                          size: 10,
-                        ),
+            child: data.light != null
+    ? Icon(
+        data.light == 0 ? Icons.wb_sunny : Icons.nights_stay, // 0이면 해, 1이면 달
+        color: Colors.white,
+        size: 10,
+      )
+    : const Icon(
+        Icons.help_outline,
+        color: Colors.white,
+        size: 10,
+      ),
                 ),
               ),
 

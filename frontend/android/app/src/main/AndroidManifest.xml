@@ -7,7 +7,7 @@
 
     <application
         android:usesCleartextTraffic="true"
-        android:label="frontend"
+        android:label="숨 SOOM"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

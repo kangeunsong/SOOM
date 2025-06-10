@@ -18,12 +18,19 @@ dependencies:
   porcupine_flutter: ^3.0.3
   permission_handler: ^11.0.1
   flutter_secure_storage: ^8.0.0
+  speech_to_text: ^6.3.0
+  flutter_tts: ^3.8.5
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.13.1
 flutter:
   uses-material-design: true
   assets:
-    - assets/soomiya_ko_android_v3_0_0.ppn
-    - assets/porcupine_params_ko.pv
+    - assets/
+
+flutter_icons:
+  android: true
+  ios: false
+  image_path: 'assets/icon/SOOM_icon.png'

@@ -30,6 +30,9 @@ class _SoomiScreenState extends State<SoomiScreen> {
   bool _configLoadFailed = false; // 설정 로드 실패 상태
   final String _apiUrl = 'https://api.openai.com/v1/chat/completions';
 
+  // 창문 제어 상태
+  bool _windowCurrentlyOpen = false;
+
   @override
   void initState() {
     super.initState();
@@ -307,11 +310,11 @@ class _SoomiScreenState extends State<SoomiScreen> {
     switch (action) {
       case 'open':
         print("🪟 창문 열기 동작 실행");
-        // 여기에 실제 창문 제어 로직 추가
+        _handleVentilationAction(true);
         break;
       case 'close':
         print("🪟 창문 닫기 동작 실행");
-        // 여기에 실제 창문 제어 로직 추가
+        _handleVentilationAction(false);
         break;
       case 'greet':
         print("👋 인사 동작");
@@ -320,6 +323,121 @@ class _SoomiScreenState extends State<SoomiScreen> {
       default:
         print("❓ 알 수 없는 동작");
         break;
+    }
+  }
+
+  // 창문 제어 함수 (HomeScreen과 동일한 로직)
+  Future<void> _handleVentilationAction(bool openWindow) async {
+    if (!mounted) return; // 위젯이 마운트되어 있는지 확인
+
+    // 창문 상태 업데이트
+    setState(() {
+      _windowCurrentlyOpen = openWindow;
+    });
+
+    String message =
+        openWindow ? "🤖 수미가 창문을 열어 환기를 시작합니다." : "🤖 수미가 창문을 닫습니다.";
+
+    // 사용자에게 메시지 표시
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                openWindow ? Icons.window : Icons.window_outlined,
+                color: Colors.white,
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: Text(message)),
+            ],
+          ),
+          backgroundColor: openWindow ? Colors.green : Colors.orange,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+
+    // 백엔드 서버의 API 주소 (HomeScreen과 동일)
+    final uri = Uri.parse(openWindow
+        ? "https://5912-113-198-180-200.ngrok-free.app/iot/send/open"
+        : "https://5912-113-198-180-200.ngrok-free.app/iot/send/close");
+
+    try {
+      print("📡 라즈베리파이로 ${openWindow ? '열기' : '닫기'} 신호 전송 중...");
+
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        print("✅ 창문 제어 명령 전송 성공: ${responseData['status']}");
+
+        // 성공 시 추가 피드백
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text("✅ 🤖 수미: 창문 ${openWindow ? '열기' : '닫기'} 완료!"),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        print("❌ 창문 제어 명령 전송 실패: ${response.statusCode}, ${response.body}");
+
+        // 실패 시 창문 상태 원복
+        if (mounted) {
+          setState(() {
+            _windowCurrentlyOpen = !openWindow;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.error, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text("❌ 창문 제어 명령 전송에 실패했습니다."),
+                ],
+              ),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print("❌ 창문 제어 네트워크 오류: $e");
+
+      // 실패 시 창문 상태 원복
+      if (mounted) {
+        setState(() {
+          _windowCurrentlyOpen = !openWindow;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.wifi_off, color: Colors.white),
+                SizedBox(width: 8),
+                Text("❌ 라즈베리파이 연결을 확인해주세요."),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 

@@ -1709,8 +1709,201 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                         ),
+
                       const SizedBox(height: 16),
-// 실시간 센서 상태 카드 (완전히 새로 디자인됨)
+
+                      // 날씨 카드
+                      if (_currentWeather != null)
+                        InkWell(
+                          onTap: _navigateToWeatherDetail,
+                          child: WeatherCard(weather: _currentWeather!),
+                        ),
+                      const SizedBox(height: 16),
+
+                      // 공기질 카드
+                      if (_currentAirQuality != null)
+                        InkWell(
+                          onTap: _navigateToAirQualityDetail,
+                          child:
+                              AirQualityCard(airQuality: _currentAirQuality!),
+                        ),
+                      const SizedBox(height: 16),
+
+                      // 스마트 환기 권장 카드 (개선됨)
+                      if (_currentWeather != null && _currentAirQuality != null)
+                        Card(
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(
+                              color: _isVentilationRecommended
+                                  ? Colors.green
+                                  : Colors.orange,
+                              width: 2,
+                            ),
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              gradient: LinearGradient(
+                                colors: [
+                                  (_isVentilationRecommended
+                                          ? Colors.green
+                                          : Colors.orange)
+                                      .withOpacity(0.1),
+                                  Colors.white,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(20.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: _isVentilationRecommended
+                                              ? Colors.green
+                                              : Colors.orange,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Icon(
+                                          _isVentilationRecommended
+                                              ? Icons.window
+                                              : Icons.window_outlined,
+                                          color: Colors.white,
+                                          size: 24,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              _isVentilationRecommended
+                                                  ? '✅ 환기 권장'
+                                                  : '⚠️ 창문 닫기 권장',
+                                              style: TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                                color: _isVentilationRecommended
+                                                    ? Colors.green.shade700
+                                                    : Colors.orange.shade700,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              '종합 환경 분석 결과',
+                                              style: TextStyle(
+                                                color: Colors.grey.shade600,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                          color: Colors.grey.shade200),
+                                    ),
+                                    child: Text(
+                                      _ventilationMessage,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+
+                                  // 창문 제어 버튼들
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: ElevatedButton.icon(
+                                          onPressed: () =>
+                                              _handleVentilationAction(true),
+                                          icon: const Icon(Icons.window,
+                                              size: 20),
+                                          label: const Text('창문 열기',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold)),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                _isVentilationRecommended
+                                                    ? Colors.green
+                                                    : Colors.grey.shade400,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 16),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            elevation: _isVentilationRecommended
+                                                ? 3
+                                                : 1,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: ElevatedButton.icon(
+                                          onPressed: () =>
+                                              _handleVentilationAction(false),
+                                          icon: const Icon(
+                                              Icons.window_outlined,
+                                              size: 20),
+                                          label: const Text('창문 닫기',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold)),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                !_isVentilationRecommended
+                                                    ? Colors.orange
+                                                    : Colors.grey.shade400,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 16),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            elevation:
+                                                !_isVentilationRecommended
+                                                    ? 3
+                                                    : 1,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+
+                      const SizedBox(height: 32),
+                      const SizedBox(height: 16),
+
                       if (_lastSensorData != null)
                         Card(
                           elevation: 4,
@@ -1969,295 +2162,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                         ),
-                      const SizedBox(height: 16),
-                      // 실시간 센서 상태 카드 (개선됨)
-//                       if (_lastSensorData != null)
-//                         Card(
-//                           elevation: 3,
-//                           shape: RoundedRectangleBorder(
-//                             borderRadius: BorderRadius.circular(16),
-//                           ),
-//                           child: Container(
-//                             decoration: BoxDecoration(
-//                               borderRadius: BorderRadius.circular(16),
-//                               gradient: LinearGradient(
-//                                 colors: [
-//                                   _isMonitoringActive
-//                                       ? Colors.green.shade50
-//                                       : Colors.grey.shade50,
-//                                   Colors.white,
-//                                 ],
-//                                 begin: Alignment.topLeft,
-//                                 end: Alignment.bottomRight,
-//                               ),
-//                             ),
-//                             child: Padding(
-//                               padding: const EdgeInsets.all(20.0),
-//                               child: Column(
-//                                 crossAxisAlignment: CrossAxisAlignment.start,
-//                                 children: [
-//                                   Row(
-//                                     children: [
-//                                       Container(
-//                                         padding: const EdgeInsets.all(8),
-//                                         decoration: BoxDecoration(
-//                                           color: _isMonitoringActive
-//                                               ? Colors.green
-//                                               : Colors.grey,
-//                                           borderRadius:
-//                                               BorderRadius.circular(8),
-//                                         ),
-//                                         child: Icon(
-//                                           _isMonitoringActive
-//                                               ? Icons.sensors
-//                                               : Icons.sensors_off,
-//                                           color: Colors.white,
-//                                           size: 20,
-//                                         ),
-//                                       ),
-//                                       const SizedBox(width: 12),
-//                                       Expanded(
-//                                         child: Column(
-//                                           crossAxisAlignment:
-//                                               CrossAxisAlignment.start,
-//                                           children: [
-//                                             const Text(
-//                                               '실시간 센서 모니터링',
-//                                               style: TextStyle(
-//                                                 fontSize: 18,
-//                                                 fontWeight: FontWeight.bold,
-//                                               ),
-//                                             ),
-//                                             Text(
-//                                               '마지막 업데이트: ${_formatTime(_lastSensorData!.timestamp)}',
-//                                               style: TextStyle(
-//                                                 color: Colors.grey.shade600,
-//                                                 fontSize: 12,
-//                                               ),
-//                                             ),
-//                                           ],
-//                                         ),
-//                                       ),
-//                                     ],
-//                                   ),
-//                                   const SizedBox(height: 20),
-//                                   SizedBox(
-
-//   child: _buildSensorStatusRow(),
-// ),
-
-//                                   // 센서 히스토리 미니 차트 (선택적)
-//                                   if (_sensorHistory.length >= 3) ...[
-//                                     const SizedBox(height: 16),
-//                                     const Divider(),
-//                                     const SizedBox(height: 8),
-//                                     Text(
-//                                       '최근 변화 추이',
-//                                       style: TextStyle(
-//                                         fontWeight: FontWeight.w600,
-//                                         color: Colors.grey.shade700,
-//                                       ),
-//                                     ),
-//                                     const SizedBox(height: 8),
-//                                     _buildMiniTrendChart(),
-//                                   ],
-//                                 ],
-//                               ),
-//                             ),
-//                           ),
-//                         ),
-//                       const SizedBox(height: 10),
-
-                      // 날씨 카드
-                      if (_currentWeather != null)
-                        InkWell(
-                          onTap: _navigateToWeatherDetail,
-                          child: WeatherCard(weather: _currentWeather!),
-                        ),
-                      const SizedBox(height: 16),
-
-                      // 공기질 카드
-                      if (_currentAirQuality != null)
-                        InkWell(
-                          onTap: _navigateToAirQualityDetail,
-                          child:
-                              AirQualityCard(airQuality: _currentAirQuality!),
-                        ),
-                      const SizedBox(height: 16),
-
-                      // 스마트 환기 권장 카드 (개선됨)
-                      if (_currentWeather != null && _currentAirQuality != null)
-                        Card(
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            side: BorderSide(
-                              color: _isVentilationRecommended
-                                  ? Colors.green
-                                  : Colors.orange,
-                              width: 2,
-                            ),
-                          ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              gradient: LinearGradient(
-                                colors: [
-                                  (_isVentilationRecommended
-                                          ? Colors.green
-                                          : Colors.orange)
-                                      .withOpacity(0.1),
-                                  Colors.white,
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(20.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          color: _isVentilationRecommended
-                                              ? Colors.green
-                                              : Colors.orange,
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        child: Icon(
-                                          _isVentilationRecommended
-                                              ? Icons.window
-                                              : Icons.window_outlined,
-                                          color: Colors.white,
-                                          size: 24,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              _isVentilationRecommended
-                                                  ? '✅ 환기 권장'
-                                                  : '⚠️ 창문 닫기 권장',
-                                              style: TextStyle(
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold,
-                                                color: _isVentilationRecommended
-                                                    ? Colors.green.shade700
-                                                    : Colors.orange.shade700,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              '종합 환경 분석 결과',
-                                              style: TextStyle(
-                                                color: Colors.grey.shade600,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 16),
-
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                          color: Colors.grey.shade200),
-                                    ),
-                                    child: Text(
-                                      _ventilationMessage,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                        height: 1.4,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 20),
-
-                                  // 창문 제어 버튼들
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: ElevatedButton.icon(
-                                          onPressed: () =>
-                                              _handleVentilationAction(true),
-                                          icon: const Icon(Icons.window,
-                                              size: 20),
-                                          label: const Text('창문 열기',
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold)),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                _isVentilationRecommended
-                                                    ? Colors.green
-                                                    : Colors.grey.shade400,
-                                            foregroundColor: Colors.white,
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 16),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                            elevation: _isVentilationRecommended
-                                                ? 3
-                                                : 1,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: ElevatedButton.icon(
-                                          onPressed: () =>
-                                              _handleVentilationAction(false),
-                                          icon: const Icon(
-                                              Icons.window_outlined,
-                                              size: 20),
-                                          label: const Text('창문 닫기',
-                                              style: TextStyle(
-                                                  fontWeight: FontWeight.bold)),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                !_isVentilationRecommended
-                                                    ? Colors.orange
-                                                    : Colors.grey.shade400,
-                                            foregroundColor: Colors.white,
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 16),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                            elevation:
-                                                !_isVentilationRecommended
-                                                    ? 3
-                                                    : 1,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-
-                      const SizedBox(height: 32),
                     ],
                   ),
                 ),

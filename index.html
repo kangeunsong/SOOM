@@ -1,0 +1,521 @@
+<script>
+        function downloadSVG(svgId, filename, type) {
+            try {
+                console.log('다운로드 시작:', svgId, filename, type);
+                
+                const svg = document.getElementById(svgId);
+                if (!svg) {
+                    alert('SVG 요소를 찾을 수 없습니다: ' + svgId);
+                    return;
+                }
+                
+                // SVG 복제
+                const clonedSvg = svg.cloneNode(true);
+                
+                // 크기 설정
+                let canvasWidth, canvasHeight;
+                switch(type) {
+                    case 'icon':
+                        canvasWidth = canvasHeight = 512;
+                        break;
+                    case 'large':
+                        canvasWidth = 1200;
+                        canvasHeight = 900;
+                        break;
+                    case 'horizontal':
+                        canvasWidth = 1000;
+                        canvasHeight = 400;
+                        break;
+                    default:
+                        canvasWidth = 800;
+                        canvasHeight = 600;
+                }
+                
+                // Canvas 생성
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = canvasWidth;
+                canvas.height = canvasHeight;
+                
+                // 배경 그리기
+                if (type === 'dark') {
+                    ctx.fillStyle = '#333333';
+                    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                } else if (type !== 'transparent') {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                }
+                
+                // SVG 데이터 URL 생성
+                const svgData = new XMLSerializer().serializeToString(clonedSvg);
+                const svgDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+                
+                // 이미지 로드 및 Canvas에 그리기
+                const img = new Image();
+                img.onload = function() {
+                    // SVG를 Canvas 중앙에 그리기
+                    const scale = Math.min(canvasWidth / img.width, canvasHeight / img.height) * 0.8;
+                    const x = (canvasWidth - img.width * scale) / 2;
+                    const y = (canvasHeight - img.height * scale) / 2;
+                    
+                    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                    
+                    // PNG로 변환하여 다운로드
+                    canvas.toBlob(function(blob) {
+                        if (blob) {
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = filename + '.png';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            URL.revokeObjectURL(url);
+                            console.log('다운로드 완료:', filename);
+                        } else {
+                            alert('PNG 생성에 실패했습니다.');
+                        }
+                    }, 'image/png', 1.0);
+                };
+                
+                img.onerror = function() {
+                    alert('이미지 로드에 실패했습니다.');
+                };
+                
+                img.src = svgDataUrl;
+                
+            } catch (error) {
+                console.error('다운로드 오류:', error);
+                alert('다운로드 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+        
+        // 페이지 로드 완료 후 테스트
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('페이지 로드 완료 - SVG 요소들:', document.querySelectorAll('svg').length);
+        });
+    </script><!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>숨 에어플로우 웨이브 로고</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #e0f2f1 0%, #e3f2fd 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #00BCD4;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00BCD4, #4DD0E1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        
+        .logo-showcase {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .logo-version {
+            background: #fff;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border: 2px solid #f0f0f0;
+            transition: all 0.3s ease;
+        }
+        
+        .logo-version:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+            border-color: #00BCD4;
+        }
+        
+        .logo-canvas {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 20px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .logo-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .logo-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .download-btn {
+            background: linear-gradient(45deg, #00BCD4, #4DD0E1);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .download-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,188,212,0.3);
+        }
+        
+        .canvas-white { background: #ffffff; }
+        .canvas-light { background: #f5f5f5; }
+        .canvas-dark { background: #333333; }
+        .canvas-transparent { 
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><rect width="10" height="10" fill="%23f0f0f0"/><rect x="10" y="10" width="10" height="10" fill="%23f0f0f0"/></svg>');
+        }
+        
+        /* 웨이브 애니메이션 */
+        .wave {
+            animation: wave 2s ease-in-out infinite;
+        }
+        
+        .wave2 {
+            animation: wave 2s ease-in-out infinite;
+            animation-delay: 0.5s;
+        }
+        
+        .wave3 {
+            animation: wave 2s ease-in-out infinite;
+            animation-delay: 1s;
+        }
+        
+        @keyframes wave {
+            0%, 100% { transform: translateY(0); opacity: 1; }
+            50% { transform: translateY(-3px); opacity: 0.7; }
+        }
+        
+        .instructions {
+            background: linear-gradient(135deg, #e0f2f1, #f3e5f5);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .instructions h3 {
+            color: #00695C;
+            margin-bottom: 15px;
+        }
+        
+        .instructions p {
+            color: #666;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>숨 에어플로우 웨이브 로고</h1>
+        <p class="subtitle">다양한 배경과 크기로 제작된 PNG 로고 컬렉션</p>
+        
+        <div class="logo-showcase">
+            <!-- 기본 버전 (흰 배경) -->
+            <div class="logo-version">
+                <div class="logo-canvas canvas-white">
+                    <svg id="logo-white" width="160" height="120" viewBox="0 0 200 150">
+                        <!-- 웨이브들 -->
+                        <path d="M30 50 Q50 40 70 50 Q90 40 110 50 Q130 40 150 50 Q170 40 190 50" 
+                              fill="none" stroke="#00BCD4" stroke-width="4" stroke-linecap="round" class="wave"/>
+                        <path d="M30 65 Q50 55 70 65 Q90 55 110 65 Q130 55 150 65 Q170 55 190 65" 
+                              fill="none" stroke="#4DD0E1" stroke-width="3" stroke-linecap="round" class="wave2"/>
+                        <path d="M30 80 Q50 70 70 80 Q90 70 110 80 Q130 70 150 80 Q170 70 190 80" 
+                              fill="none" stroke="#B2EBF2" stroke-width="3" stroke-linecap="round" class="wave3"/>
+                        <!-- 텍스트 -->
+                        <text x="110" y="115" text-anchor="middle" font-family="Arial" font-size="24" font-weight="bold" fill="#00695C">숨</text>
+                        <text x="110" y="135" text-anchor="middle" font-family="Arial" font-size="12" fill="#00695C">BREATH</text>
+                    </svg>
+                </div>
+                <div class="logo-title">기본 버전 (흰 배경)</div>
+                <div class="logo-description">
+                    일반적인 용도로 사용할 수 있는 흰 배경 버전
+                </div>
+                <button class="download-btn" onclick="downloadSVG('logo-white', '숨_로고_기본버전', 'white')">PNG 다운로드</button>
+            </div>
+            
+            <!-- 투명 배경 버전 -->
+            <div class="logo-version">
+                <div class="logo-canvas canvas-transparent">
+                    <svg id="logo-transparent" width="160" height="120" viewBox="0 0 200 150">
+                        <!-- 아이콘 버전의 웨이브 그대로 복사 (크기 조정) -->
+                        <path d="M25 50 Q45 40 65 50 Q85 40 105 50 Q125 40 145 50 Q165 40 185 50" 
+                              fill="none" stroke="#00BCD4" stroke-width="4" stroke-linecap="round" class="wave"/>
+                        <path d="M25 65 Q45 55 65 65 Q85 55 105 65 Q125 55 145 65 Q165 55 185 65" 
+                              fill="none" stroke="#4DD0E1" stroke-width="3" stroke-linecap="round" class="wave2"/>
+                        <path d="M25 80 Q45 70 65 80 Q85 70 105 80 Q125 70 145 80 Q165 70 185 80" 
+                              fill="none" stroke="#B2EBF2" stroke-width="3" stroke-linecap="round" class="wave3"/>
+                        <!-- 텍스트 -->
+                        <text x="105" y="115" text-anchor="middle" font-family="Arial" font-size="24" font-weight="bold" fill="#00695C">숨</text>
+                        <text x="105" y="135" text-anchor="middle" font-family="Arial" font-size="12" fill="#00695C">BREATH</text>
+                    </svg>
+                </div>
+                <div class="logo-title">투명 배경 버전 (아이콘 웨이브)</div>
+                <div class="logo-description">
+                    아이콘 버전과 동일한 웨이브 패턴을 투명 배경으로 적용
+                </div>
+                <button class="download-btn" onclick="downloadSVG('logo-transparent', '숨_로고_투명배경_아이콘웨이브', 'transparent')">PNG 다운로드</button>
+            </div>
+            
+            <!-- 다크모드 버전 -->
+            <div class="logo-version">
+                <div class="logo-canvas canvas-dark">
+                    <svg id="logo-dark" width="160" height="120" viewBox="0 0 200 150">
+                        <!-- 웨이브들 -->
+                        <path d="M30 50 Q50 40 70 50 Q90 40 110 50 Q130 40 150 50 Q170 40 190 50" 
+                              fill="none" stroke="#4DD0E1" stroke-width="4" stroke-linecap="round" class="wave"/>
+                        <path d="M30 65 Q50 55 70 65 Q90 55 110 65 Q130 55 150 65 Q170 55 190 65" 
+                              fill="none" stroke="#B2EBF2" stroke-width="3" stroke-linecap="round" class="wave2"/>
+                        <path d="M30 80 Q50 70 70 80 Q90 70 110 80 Q130 70 150 80 Q170 70 190 80" 
+                              fill="none" stroke="#E0F7FA" stroke-width="3" stroke-linecap="round" class="wave3"/>
+                        <!-- 텍스트 -->
+                        <text x="110" y="115" text-anchor="middle" font-family="Arial" font-size="24" font-weight="bold" fill="#E0F7FA">숨</text>
+                        <text x="110" y="135" text-anchor="middle" font-family="Arial" font-size="12" fill="#B2EBF2">BREATH</text>
+                    </svg>
+                </div>
+                <div class="logo-title">다크모드 버전</div>
+                <div class="logo-description">
+                    어두운 배경에서 사용하기 적합한 밝은 컬러 버전
+                </div>
+                <button class="download-btn" onclick="downloadSVG('logo-dark', '숨_로고_다크모드', 'dark')">PNG 다운로드</button>
+            </div>
+            
+            <!-- 아이콘 전용 (웨이브만) -->
+            <div class="logo-version">
+                <div class="logo-canvas canvas-light">
+                    <svg id="logo-icon" width="120" height="120" viewBox="0 0 150 150">
+                        <!-- 원형 배경 -->
+                        <circle cx="75" cy="75" r="70" fill="#ffffff" stroke="#00BCD4" stroke-width="3"/>
+                        <!-- 웨이브들 -->
+                        <path d="M25 60 Q45 50 65 60 Q85 50 105 60 Q125 50 145 60" 
+                              fill="none" stroke="#00BCD4" stroke-width="4" stroke-linecap="round" class="wave"/>
+                        <path d="M25 75 Q45 65 65 75 Q85 65 105 75 Q125 65 145 75" 
+                              fill="none" stroke="#4DD0E1" stroke-width="3" stroke-linecap="round" class="wave2"/>
+                        <path d="M25 90 Q45 80 65 90 Q85 80 105 90 Q125 80 145 90" 
+                              fill="none" stroke="#B2EBF2" stroke-width="3" stroke-linecap="round" class="wave3"/>
+                    </svg>
+                </div>
+                <div class="logo-title">아이콘 버전</div>
+                <div class="logo-description">
+                    앱 아이콘이나 파비콘으로 사용할 수 있는 심볼형
+                </div>
+                <button class="download-btn" onclick="downloadSVG('logo-icon', '숨_로고_아이콘', 'icon')">PNG 다운로드</button>
+            </div>
+            
+            <!-- 대형 버전 -->
+            <div class="logo-version">
+                <div class="logo-canvas canvas-white">
+                    <svg id="logo-large" width="180" height="140" viewBox="0 0 220 170">
+                        <!-- 웨이브들 (더 많은 웨이브) -->
+                        <path d="M20 45 Q40 35 60 45 Q80 35 100 45 Q120 35 140 45 Q160 35 180 45 Q200 35 220 45" 
+                              fill="none" stroke="#00BCD4" stroke-width="5" stroke-linecap="round" class="wave"/>
+                        <path d="M20 60 Q40 50 60 60 Q80 50 100 60 Q120 50 140 60 Q160 50 180 60 Q200 50 220 60" 
+                              fill="none" stroke="#4DD0E1" stroke-width="4" stroke-linecap="round" class="wave2"/>
+                        <path d="M20 75 Q40 65 60 75 Q80 65 100 75 Q120 65 140 75 Q160 65 180 75 Q200 65 220 75" 
+                              fill="none" stroke="#B2EBF2" stroke-width="4" stroke-linecap="round" class="wave3"/>
+                        <path d="M20 90 Q40 80 60 90 Q80 80 100 90 Q120 80 140 90 Q160 80 180 90 Q200 80 220 90" 
+                              fill="none" stroke="#E0F7FA" stroke-width="3" stroke-linecap="round" class="wave"/>
+                        <!-- 텍스트 -->
+                        <text x="120" y="125" text-anchor="middle" font-family="Arial" font-size="28" font-weight="bold" fill="#00695C">숨</text>
+                        <text x="120" y="150" text-anchor="middle" font-family="Arial" font-size="16" fill="#00695C">BREATH PROJECT</text>
+                    </svg>
+                </div>
+                <div class="logo-title">대형 버전</div>
+                <div class="logo-description">
+                    포스터, 현수막 등 큰 크기로 인쇄할 때 사용하는 고해상도 버전
+                </div>
+                <button class="download-btn" onclick="downloadSVG('logo-large', '숨_로고_대형버전', 'large')">PNG 다운로드</button>
+            </div>
+            
+            <!-- 가로형 버전 -->
+            <div class="logo-version">
+                <div class="logo-canvas canvas-transparent">
+                    <svg id="logo-horizontal" width="200" height="80" viewBox="0 0 300 120">
+                        <!-- 웨이브들 (크기 확대 및 중앙 배치) -->
+                        <path d="M40 40 Q80 25 120 40 Q160 25 200 40 Q240 25 280 40" 
+                              fill="none" stroke="#00BCD4" stroke-width="6" stroke-linecap="round" class="wave"/>
+                        <path d="M40 60 Q80 45 120 60 Q160 45 200 60 Q240 45 280 60" 
+                              fill="none" stroke="#4DD0E1" stroke-width="5" stroke-linecap="round" class="wave2"/>
+                        <path d="M40 80 Q80 65 120 80 Q160 65 200 80 Q240 65 280 80" 
+                              fill="none" stroke="#B2EBF2" stroke-width="5" stroke-linecap="round" class="wave3"/>
+                    </svg>
+                </div>
+                <div class="logo-title">가로형 웨이브 전용 (투명 배경)</div>
+                <div class="logo-description">
+                    텍스트 없이 웨이브만 있는 깔끔한 가로형 버전, 로딩바나 구분선으로 활용 가능
+                </div>
+                <button class="download-btn" onclick="downloadSVG('logo-horizontal', '숨_로고_가로형_웨이브전용', 'transparent')">PNG 다운로드</button>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>📥 다운로드 방법</h3>
+            <p>
+                각 로고 이미지를 클릭하거나 "PNG 다운로드" 버튼을 눌러주세요.<br>
+                고해상도 PNG 파일로 다운로드됩니다. (300DPI, 투명 배경 지원)<br>
+                웹, 인쇄물, 앱 등 다양한 용도로 자유롭게 사용하세요! 🎨
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function downloadLogo(type) {
+            // 현재 클릭된 요소에서 SVG 찾기
+            let svg;
+            if (event.target.closest('.logo-canvas')) {
+                svg = event.target.closest('.logo-canvas').querySelector('svg');
+            } else if (event.target.closest('.logo-version')) {
+                svg = event.target.closest('.logo-version').querySelector('svg');
+            }
+            
+            if (!svg) {
+                alert('SVG를 찾을 수 없습니다.');
+                return;
+            }
+            
+            // SVG 복제하여 스타일 적용
+            const clonedSvg = svg.cloneNode(true);
+            
+            // SVG 크기 설정
+            let width, height, svgWidth, svgHeight;
+            
+            switch(type) {
+                case 'white':
+                case 'transparent':
+                case 'dark':
+                    width = 800;
+                    height = 600;
+                    svgWidth = 400;
+                    svgHeight = 300;
+                    break;
+                case 'icon':
+                    width = 512;
+                    height = 512;
+                    svgWidth = 400;
+                    svgHeight = 400;
+                    break;
+                case 'large':
+                    width = 1200;
+                    height = 900;
+                    svgWidth = 880;
+                    svgHeight = 680;
+                    break;
+                case 'horizontal':
+                    width = 1000;
+                    height = 400;
+                    svgWidth = 800;
+                    svgHeight = 320;
+                    break;
+                default:
+                    width = 800;
+                    height = 600;
+                    svgWidth = 400;
+                    svgHeight = 300;
+            }
+            
+            // 새로운 SVG 생성
+            const newSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            newSvg.setAttribute('width', svgWidth);
+            newSvg.setAttribute('height', svgHeight);
+            newSvg.setAttribute('viewBox', clonedSvg.getAttribute('viewBox') || `0 0 ${svgWidth} ${svgHeight}`);
+            
+            // 배경 추가 (투명이 아닌 경우)
+            if (type !== 'transparent') {
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('width', '100%');
+                rect.setAttribute('height', '100%');
+                rect.setAttribute('fill', type === 'dark' ? '#333333' : '#ffffff');
+                newSvg.appendChild(rect);
+            }
+            
+            // 원본 SVG 내용 복사
+            while (clonedSvg.firstChild) {
+                newSvg.appendChild(clonedSvg.firstChild);
+            }
+            
+            // SVG를 문자열로 변환
+            const serializer = new XMLSerializer();
+            const svgString = serializer.serializeToString(newSvg);
+            
+            // Canvas 생성
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = width;
+            canvas.height = height;
+            
+            // SVG를 이미지로 변환
+            const img = new Image();
+            const svgBlob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
+            const url = URL.createObjectURL(svgBlob);
+            
+            img.onload = function() {
+                // 캔버스에 이미지 그리기
+                const x = (width - svgWidth) / 2;
+                const y = (height - svgHeight) / 2;
+                ctx.drawImage(img, x, y, svgWidth, svgHeight);
+                
+                // PNG로 변환하여 다운로드
+                canvas.toBlob(function(blob) {
+                    const link = document.createElement('a');
+                    link.download = `숨_로고_${type}.png`;
+                    link.href = URL.createObjectURL(blob);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // 메모리 정리
+                    URL.revokeObjectURL(url);
+                    URL.revokeObjectURL(link.href);
+                }, 'image/png', 1.0);
+            };
+            
+            img.onerror = function() {
+                alert('이미지 변환에 실패했습니다.');
+                URL.revokeObjectURL(url);
+            };
+            
+            img.src = url;
+        }
+    </script>
+</body>
+</html>

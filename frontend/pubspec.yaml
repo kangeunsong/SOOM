@@ -20,17 +20,25 @@ dependencies:
   flutter_secure_storage: ^8.0.0
   speech_to_text: ^6.3.0
   flutter_tts: ^3.8.5
+  flutter_svg: ^2.0.9
+  flutter_native_splash: ^2.3.6
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_launcher_icons: ^0.13.1
+
 flutter:
   uses-material-design: true
   assets:
     - assets/
+    - assets/icon/
+    - assets/png/
 
 flutter_icons:
   android: true
   ios: false
   image_path: 'assets/icon/SOOM_icon.png'
+
+flutter_native_splash:
+  remove: true

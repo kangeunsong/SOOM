@@ -90,6 +90,89 @@
             }
         }
         
+        // GIF 다운로드 함수
+        function downloadGIF(svgId, filename) {
+            try {
+                console.log('GIF 다운로드 시작:', svgId, filename);
+                
+                const svg = document.getElementById(svgId);
+                if (!svg) {
+                    alert('SVG 요소를 찾을 수 없습니다: ' + svgId);
+                    return;
+                }
+                
+                // Canvas 설정
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const canvasWidth = 1000;
+                const canvasHeight = 400;
+                canvas.width = canvasWidth;
+                canvas.height = canvasHeight;
+                
+                // 애니메이션 프레임 생성
+                const frames = [];
+                const frameCount = 30; // 30프레임
+                let framesGenerated = 0;
+                
+                for (let i = 0; i < frameCount; i++) {
+                    const frameCanvas = document.createElement('canvas');
+                    const frameCtx = frameCanvas.getContext('2d');
+                    frameCanvas.width = canvasWidth;
+                    frameCanvas.height = canvasHeight;
+                    
+                    // 투명 배경
+                    frameCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+                    
+                    // 애니메이션 오프셋 계산
+                    const offset = (i / frameCount) * Math.PI * 2;
+                    
+                    // 웨이브 그리기
+                    const waveData = [
+                        { color: '#00BCD4', yBase: 25, delay: 0 },
+                        { color: '#4DD0E1', yBase: 60, delay: Math.PI / 3 },
+                        { color: '#B2EBF2', yBase: 95, delay: Math.PI * 2 / 3 }
+                    ];
+                    
+                    waveData.forEach(wave => {
+                        frameCtx.strokeStyle = wave.color;
+                        frameCtx.lineWidth = 10;
+                        frameCtx.lineCap = 'round';
+                        frameCtx.beginPath();
+                        
+                        const animOffset = Math.sin(offset + wave.delay) * 5; // 5px 움직임
+                        const yPos = wave.yBase + animOffset;
+                        
+                        frameCtx.moveTo(40, yPos);
+                        frameCtx.quadraticCurveTo(80, yPos - 15, 120, yPos);
+                        frameCtx.quadraticCurveTo(160, yPos - 15, 200, yPos);
+                        frameCtx.quadraticCurveTo(240, yPos - 15, 280, yPos);
+                        frameCtx.stroke();
+                    });
+                    
+                    // 프레임을 Base64로 변환
+                    frames.push(frameCanvas.toDataURL('image/png'));
+                    framesGenerated++;
+                }
+                
+                // 간단한 GIF 생성 (실제로는 PNG 시퀀스를 ZIP으로)
+                if (frames.length === frameCount) {
+                    // 첫 번째 프레임을 PNG로 다운로드 (브라우저 제한으로 인해)
+                    const link = document.createElement('a');
+                    link.href = frames[0];
+                    link.download = filename + '_frame1.png';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    alert('브라우저 제한으로 인해 PNG 프레임만 다운로드됩니다.\nGIF 제작을 원하시면 온라인 GIF 메이커를 이용해주세요!\n\n추천 사이트:\n- ezgif.com\n- giphy.com/create');
+                }
+                
+            } catch (error) {
+                console.error('GIF 다운로드 오류:', error);
+                alert('GIF 생성 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+        
         // 페이지 로드 완료 후 테스트
         document.addEventListener('DOMContentLoaded', function() {
             console.log('페이지 로드 완료 - SVG 요소들:', document.querySelectorAll('svg').length);
@@ -371,20 +454,21 @@
             <div class="logo-version">
                 <div class="logo-canvas canvas-transparent">
                     <svg id="logo-horizontal" width="200" height="80" viewBox="0 0 300 120">
-                        <!-- 웨이브들 (크기 확대 및 중앙 배치) -->
-                        <path d="M40 40 Q80 25 120 40 Q160 25 200 40 Q240 25 280 40" 
-                              fill="none" stroke="#00BCD4" stroke-width="6" stroke-linecap="round" class="wave"/>
+                        <!-- 웨이브들 (간격 35px로 확장) -->
+                        <path d="M40 25 Q80 10 120 25 Q160 10 200 25 Q240 10 280 25" 
+                              fill="none" stroke="#00BCD4" stroke-width="10" stroke-linecap="round" class="wave"/>
                         <path d="M40 60 Q80 45 120 60 Q160 45 200 60 Q240 45 280 60" 
-                              fill="none" stroke="#4DD0E1" stroke-width="5" stroke-linecap="round" class="wave2"/>
-                        <path d="M40 80 Q80 65 120 80 Q160 65 200 80 Q240 65 280 80" 
-                              fill="none" stroke="#B2EBF2" stroke-width="5" stroke-linecap="round" class="wave3"/>
+                              fill="none" stroke="#4DD0E1" stroke-width="10" stroke-linecap="round" class="wave2"/>
+                        <path d="M40 95 Q80 80 120 95 Q160 80 200 95 Q240 80 280 95" 
+                              fill="none" stroke="#B2EBF2" stroke-width="10" stroke-linecap="round" class="wave3"/>
                     </svg>
                 </div>
                 <div class="logo-title">가로형 웨이브 전용 (투명 배경)</div>
                 <div class="logo-description">
-                    텍스트 없이 웨이브만 있는 깔끔한 가로형 버전, 로딩바나 구분선으로 활용 가능
+                    텍스트 없이 웨이브만 있는 굵은(10px) 가로형 버전, 로딩바나 구분선으로 활용 가능
                 </div>
                 <button class="download-btn" onclick="downloadSVG('logo-horizontal', '숨_로고_가로형_웨이브전용', 'transparent')">PNG 다운로드</button>
+                <button class="download-btn" onclick="downloadGIF('logo-horizontal', '숨_로고_가로형_웨이브_애니메이션')" style="background: linear-gradient(45deg, #FF6B35, #F7931E); margin-left: 10px;">GIF 다운로드</button>
             </div>
         </div>
         

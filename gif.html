@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>투명 배경 웨이브 애니메이션</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            width: 600px;
+            height: 120px;
+            overflow: hidden;
+        }
+        
+        .wave-container {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .wave-svg {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+        }
+        
+        /* 웨이브 애니메이션 */
+        .wave1 {
+            animation: wave1 3s ease-in-out infinite;
+        }
+        
+        .wave2 {
+            animation: wave2 3s ease-in-out infinite;
+            animation-delay: 1s;
+        }
+        
+        .wave3 {
+            animation: wave3 3s ease-in-out infinite;
+            animation-delay: 2s;
+        }
+        
+        @keyframes wave1 {
+            0%, 100% { 
+                transform: translateY(0px); 
+                opacity: 1; 
+            }
+            50% { 
+                transform: translateY(-8px); 
+                opacity: 0.8; 
+            }
+        }
+        
+        @keyframes wave2 {
+            0%, 100% { 
+                transform: translateY(0px); 
+                opacity: 1; 
+            }
+            50% { 
+                transform: translateY(-6px); 
+                opacity: 0.9; 
+            }
+        }
+        
+        @keyframes wave3 {
+            0%, 100% { 
+                transform: translateY(0px); 
+                opacity: 1; 
+            }
+            50% { 
+                transform: translateY(-4px); 
+                opacity: 0.7; 
+            }
+        }
+        
+        /* 체크무늬 배경 (투명 확인용) */
+        .checker-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
+                linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+                linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            z-index: -1;
+        }
+        
+        .controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+        
+        .btn {
+            background: #00BCD4;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 2px;
+            font-size: 11px;
+        }
+        
+        .btn:hover {
+            background: #00ACC1;
+        }
+        
+        .recording-area {
+            border: 2px dashed #ff4444;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 600px;
+            height: 120px;
+            pointer-events: none;
+            z-index: 100;
+            display: none;
+        }
+        
+        .guide-text {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 투명 배경 확인용 체크무늬 -->
+    <div class="checker-bg" id="checkerBg"></div>
+    
+    <!-- 녹화 영역 표시 -->
+    <div class="recording-area" id="recordingArea"></div>
+    
+    <!-- 웨이브 애니메이션 -->
+    <div class="wave-container">
+        <svg class="wave-svg" viewBox="0 0 300 120">
+            <!-- 웨이브 1 -->
+            <path class="wave1" d="M40 25 Q80 10 120 25 Q160 10 200 25 Q240 10 280 25" 
+                  fill="none" stroke="#00BCD4" stroke-width="10" stroke-linecap="round"/>
+            
+            <!-- 웨이브 2 -->
+            <path class="wave2" d="M40 60 Q80 45 120 60 Q160 45 200 60 Q240 45 280 60" 
+                  fill="none" stroke="#4DD0E1" stroke-width="10" stroke-linecap="round"/>
+            
+            <!-- 웨이브 3 -->
+            <path class="wave3" d="M40 95 Q80 80 120 95 Q160 80 200 95 Q240 80 280 95" 
+                  fill="none" stroke="#B2EBF2" stroke-width="10" stroke-linecap="round"/>
+        </svg>
+    </div>
+    
+    <!-- 컨트롤 패널 -->
+    <div class="controls">
+        <div><strong>투명 배경 GIF 제작</strong></div>
+        <button class="btn" onclick="toggleChecker()">배경 체크무늬 토글</button>
+        <button class="btn" onclick="showRecordArea()">녹화 영역 표시</button>
+        <button class="btn" onclick="downloadHTML()">HTML 다운로드</button>
+    </div>
+    
+    <!-- 가이드 텍스트 -->
+    <div class="guide-text">
+        <strong>🎬 투명 배경 GIF 만들기:</strong><br>
+        1. "녹화 영역 표시" 클릭<br>
+        2. 빨간 테두리 영역만 정확히 녹화<br>
+        3. ScreenToGif → Remove Background 사용<br>
+        4. 또는 unscreen.com에서 배경 제거
+    </div>
+
+    <script>
+        function toggleChecker() {
+            const checker = document.getElementById('checkerBg');
+            checker.style.display = checker.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function showRecordArea() {
+            const area = document.getElementById('recordingArea');
+            area.style.display = area.style.display === 'none' ? 'block' : 'none';
+            
+            if (area.style.display === 'block') {
+                setTimeout(() => {
+                    area.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        function downloadHTML() {
+            const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { margin: 0; background: transparent; width: 600px; height: 120px; }
+        .wave-svg { width: 100%; height: 100%; }
+        .wave1 { animation: wave1 3s ease-in-out infinite; }
+        .wave2 { animation: wave2 3s ease-in-out infinite; animation-delay: 1s; }
+        .wave3 { animation: wave3 3s ease-in-out infinite; animation-delay: 2s; }
+        @keyframes wave1 { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
+        @keyframes wave2 { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-6px); } }
+        @keyframes wave3 { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-4px); } }
+    </style>
+</head>
+<body>
+    <svg class="wave-svg" viewBox="0 0 300 120">
+        <path class="wave1" d="M40 25 Q80 10 120 25 Q160 10 200 25 Q240 10 280 25" 
+              fill="none" stroke="#00BCD4" stroke-width="10" stroke-linecap="round"/>
+        <path class="wave2" d="M40 60 Q80 45 120 60 Q160 45 200 60 Q240 45 280 60" 
+              fill="none" stroke="#4DD0E1" stroke-width="10" stroke-linecap="round"/>
+        <path class="wave3" d="M40 95 Q80 80 120 95 Q160 80 200 95 Q240 80 280 95" 
+              fill="none" stroke="#B2EBF2" stroke-width="10" stroke-linecap="round"/>
+    </svg>
+</body>
+</html>`;
+
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = '투명배경_웨이브_애니메이션.html';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

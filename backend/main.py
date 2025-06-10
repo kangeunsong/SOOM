@@ -68,11 +68,18 @@ def read_users_me(token: str = Depends(oauth2_scheme), db: Session = Depends(get
         raise credentials_exception
     return user
 
-@app.route('/receive-cmd', methods=['POST'])
-def receive_cmd():
-    data = request.get_json()
-    print(data)
-    return jsonify({"status": "received"})
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+@app.post("/receive-cmd")
+async def receive_cmd(request: Request):
+    try:
+        data = await request.json()
+        print("📦 받은 데이터:", data)
+        return JSONResponse(content={"status": "received", "data": data})
+    except Exception as e:
+        print("❌ 에러 발생:", e)
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
 
 # from fastapi import APIRouter
@@ -117,7 +124,7 @@ import requests
 
 router = APIRouter()
 
-RASPBERRY_PI_URL = "https://a402-113-198-180-138.ngrok-free.app/receive-cmd"
+RASPBERRY_PI_URL = "https://d5f3-113-198-180-154.ngrok-free.app/receive-cmd"
 
 @router.post("/send/open")
 def send_open_command():

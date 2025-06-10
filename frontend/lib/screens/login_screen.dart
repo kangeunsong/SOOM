@@ -102,21 +102,11 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('스마트 환기 시스템'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        centerTitle: true,
-      ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade50,
-              Colors.white,
-            ],
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/png/login_screen.png'),
+            fit: BoxFit.cover,
           ),
         ),
         child: Padding(
@@ -127,113 +117,129 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // 로고 및 타이틀
+                  // 로그인 폼 - 상단 여백 추가
+                  const SizedBox(height: 100),
+
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(32),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.blue.withOpacity(0.1),
+                          color: const Color(0xFF00BCD4).withOpacity(0.2),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
                       ],
                     ),
                     child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade100,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.air,
-                            size: 60,
-                            color: Colors.blue,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          '스마트 환기 시스템',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'IoT 센서 기반 자동 환기 관리',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // 로그인 폼
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        TextField(
-                          controller: userController,
-                          decoration: InputDecoration(
-                            labelText: '사용자 이름',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            prefixIcon: const Icon(Icons.person),
-                            filled: true,
-                            fillColor: Colors.grey.shade50,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          controller: passController,
-                          decoration: InputDecoration(
-                            labelText: '비밀번호',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            prefixIcon: const Icon(Icons.lock),
-                            filled: true,
-                            fillColor: Colors.grey.shade50,
-                          ),
-                          obscureText: true,
-                        ),
-                        const SizedBox(height: 16),
-
-                        // 자동로그인 체크박스
+                        // 사용자 이름 입력칸 - 크기 증가 및 테두리 색상 연하게
                         Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.blue.shade100),
+                          height: 80,
+                          child: TextField(
+                            controller: userController,
+                            decoration: InputDecoration(
+                              labelText: '사용자 이름',
+                              labelStyle: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 16,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                  width: 1,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                  width: 1,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF4DD0E1),
+                                  width: 2,
+                                ),
+                              ),
+                              prefixIcon: Icon(
+                                Icons.person,
+                                color: Colors.grey.shade500,
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 18,
+                              ),
+                            ),
+                            style: const TextStyle(fontSize: 16),
                           ),
-                          child: Row(
-                            children: [
-                              Checkbox(
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        // 비밀번호 입력칸 - 크기 증가 및 테두리 색상 연하게
+                        Container(
+                          height: 80,
+                          child: TextField(
+                            controller: passController,
+                            decoration: InputDecoration(
+                              labelText: '비밀번호',
+                              labelStyle: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 16,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                  width: 1,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: Colors.grey.shade300,
+                                  width: 1,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF4DD0E1),
+                                  width: 2,
+                                ),
+                              ),
+                              prefixIcon: Icon(
+                                Icons.lock,
+                                color: Colors.grey.shade500,
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 18,
+                              ),
+                            ),
+                            obscureText: true,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ),
+
+                        // 자동로그인 체크박스 - 비밀번호 칸 왼쪽 밑에 작은 크기로
+                        const SizedBox(height: 5),
+                        Row(
+                          children: [
+                            Transform.scale(
+                              scale: 0.8,
+                              child: Checkbox(
                                 value: rememberMe,
                                 onChanged: (bool? value) async {
                                   if (value != null) {
@@ -253,25 +259,20 @@ class _LoginScreenState extends State<LoginScreen> {
                                     }
                                   }
                                 },
-                                activeColor: Colors.blue,
+                                activeColor: const Color(0xFF00BCD4),
                               ),
-                              const Text(
-                                '자동로그인',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                            ),
+                            const Text(
+                              '자동로그인',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
                               ),
-                              const Spacer(),
-                              Icon(
-                                Icons.info_outline,
-                                size: 16,
-                                color: Colors.grey.shade600,
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
 
+                        // 에러 메시지
                         if (errorMessage != null &&
                             errorMessage!.isNotEmpty) ...[
                           const SizedBox(height: 16),
@@ -279,13 +280,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: (errorMessage?.startsWith('✅') ?? false)
-                                  ? Colors.green.shade50
+                                  ? const Color(0xFFC1F2B2).withOpacity(0.3)
                                   : Colors.red.shade50,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
                                   color:
                                       (errorMessage?.startsWith('✅') ?? false)
-                                          ? Colors.green.shade200
+                                          ? const Color(0xFFC1F2B2)
                                           : Colors.red.shade200),
                             ),
                             child: Row(
@@ -315,23 +316,24 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
 
-                        const SizedBox(height: 24),
-
+                        // 로그인 버튼 - 00BCD4 색상으로
                         ElevatedButton(
                           onPressed: isLoading ? null : login,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
+                            backgroundColor: const Color(0xFF00BCD4),
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(vertical: 18),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             elevation: 3,
+                            disabledBackgroundColor:
+                                const Color(0xFF00BCD4).withOpacity(0.6),
                           ),
                           child: isLoading
                               ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
+                                  height: 22,
+                                  width: 22,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     color: Colors.white,
@@ -344,44 +346,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // 추가 정보
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.security,
-                                color: Colors.grey.shade600, size: 16),
-                            const SizedBox(width: 8),
-                            Text(
-                              '안전한 자동로그인',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey.shade700,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '로그인 정보는 안전하게 암호화되어 저장됩니다',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
                         ),
                       ],
                     ),

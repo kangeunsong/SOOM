@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>가로형 웨이브 아이콘 - 2가지 버전</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 40px;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #e0f2f1 0%, #e3f2fd 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #00BCD4;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00BCD4, #4DD0E1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 50px;
+            font-size: 1.2em;
+        }
+        
+        .wave-showcase {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .wave-version {
+            background: #fff;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border: 2px solid #f0f0f0;
+            transition: all 0.3s ease;
+        }
+        
+        .wave-version:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            border-color: #00BCD4;
+        }
+        
+        .wave-canvas {
+            width: 100%;
+            height: 120px;
+            margin: 0 auto 25px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border: 2px dashed #e0e0e0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><rect width="10" height="10" fill="%23f8f8f8"/><rect x="10" y="10" width="10" height="10" fill="%23f8f8f8"/></svg>');
+        }
+        
+        .wave-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .wave-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+        
+        .download-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .download-btn {
+            background: linear-gradient(45deg, #00BCD4, #4DD0E1);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 0.95em;
+        }
+        
+        .download-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0,188,212,0.3);
+        }
+        
+        .download-btn.white {
+            background: linear-gradient(45deg, #ffffff, #f5f5f5);
+            color: #333;
+            border: 2px solid #ddd;
+        }
+        
+        .download-btn.white:hover {
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        
+        /* 웨이브 애니메이션 */
+        .wave-anim {
+            animation: wave-flow 3s ease-in-out infinite;
+        }
+        
+        .wave-anim2 {
+            animation: wave-flow 3s ease-in-out infinite;
+            animation-delay: 1s;
+        }
+        
+        .wave-anim3 {
+            animation: wave-flow 3s ease-in-out infinite;
+            animation-delay: 2s;
+        }
+        
+        @keyframes wave-flow {
+            0%, 100% { 
+                transform: translateY(0); 
+                opacity: 1; 
+            }
+            50% { 
+                transform: translateY(-4px); 
+                opacity: 0.8; 
+            }
+        }
+        
+        .features {
+            background: linear-gradient(135deg, #e0f2f1, #f3e5f5);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 40px;
+            text-align: center;
+        }
+        
+        .features h3 {
+            color: #00695C;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+        }
+        
+        .features ul {
+            color: #666;
+            line-height: 1.8;
+            list-style: none;
+            padding: 0;
+        }
+        
+        .features li {
+            margin-bottom: 10px;
+        }
+        
+        .features li:before {
+            content: "✨ ";
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>가로형 웨이브 아이콘</h1>
+        <p class="subtitle">컬러 버전과 화이트 버전 - 2가지 스타일</p>
+        
+        <div class="wave-showcase">
+            <!-- 컬러 버전 (기존) -->
+            <div class="wave-version">
+                <div class="wave-canvas">
+                    <svg id="wave-color" width="400" height="80" viewBox="0 0 300 120">
+                        <!-- 웨이브들 (간격 35px로 확장) -->
+                        <path d="M40 25 Q80 10 120 25 Q160 10 200 25 Q240 10 280 25" 
+                              fill="none" stroke="#00BCD4" stroke-width="10" stroke-linecap="round" class="wave-anim"/>
+                        <path d="M40 60 Q80 45 120 60 Q160 45 200 60 Q240 45 280 60" 
+                              fill="none" stroke="#4DD0E1" stroke-width="10" stroke-linecap="round" class="wave-anim2"/>
+                        <path d="M40 95 Q80 80 120 95 Q160 80 200 95 Q240 80 280 95" 
+                              fill="none" stroke="#B2EBF2" stroke-width="10" stroke-linecap="round" class="wave-anim3"/>
+                    </svg>
+                </div>
+                <div class="wave-title">🎨 컬러 버전</div>
+                <div class="wave-description">
+                    시안 계열 그라데이션 컬러로 제작된 웨이브<br>
+                    <strong>#00BCD4 → #4DD0E1 → #B2EBF2</strong><br>
+                    브랜드 아이덴티티에 맞는 생동감 있는 디자인
+                </div>
+                <div class="download-buttons">
+                    <button class="download-btn" onclick="downloadWave('wave-color', '숨_가로웨이브_컬러버전', 'transparent')">
+                        투명 PNG
+                    </button>
+                    <button class="download-btn white" onclick="downloadWave('wave-color', '숨_가로웨이브_컬러버전_흰배경', 'white')">
+                        흰배경 PNG
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 화이트 버전 (신규) -->
+            <div class="wave-version">
+                <div class="wave-canvas" style="background-color: #333;">
+                    <svg id="wave-white" width="400" height="80" viewBox="0 0 300 120">
+                        <!-- 웨이브들 - 모두 흰색 -->
+                        <path d="M40 25 Q80 10 120 25 Q160 10 200 25 Q240 10 280 25" 
+                              fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" class="wave-anim"/>
+                        <path d="M40 60 Q80 45 120 60 Q160 45 200 60 Q240 45 280 60" 
+                              fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" class="wave-anim2"/>
+                        <path d="M40 95 Q80 80 120 95 Q160 80 200 95 Q240 80 280 95" 
+                              fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" class="wave-anim3"/>
+                    </svg>
+                </div>
+                <div class="wave-title">⚪ 화이트 버전</div>
+                <div class="wave-description">
+                    모든 웨이브를 순백색으로 통일한 미니멀 디자인<br>
+                    <strong>#FFFFFF (단일 컬러)</strong><br>
+                    어두운 배경이나 컬러풀한 배경에 최적화
+                </div>
+                <div class="download-buttons">
+                    <button class="download-btn" onclick="downloadWave('wave-white', '숨_가로웨이브_화이트버전', 'transparent')">
+                        투명 PNG
+                    </button>
+                    <button class="download-btn white" onclick="downloadWave('wave-white', '숨_가로웨이브_화이트버전_검은배경', 'dark')">
+                        검은배경 PNG
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="features">
+            <h3>🎯 활용 방법</h3>
+            <ul>
+                <li><strong>로딩바</strong>: 웹사이트나 앱의 로딩 인디케이터로 활용</li>
+                <li><strong>구분선</strong>: 섹션을 나누는 예쁜 디바이더로 사용</li>
+                <li><strong>헤더/푸터</strong>: 페이지 상하단 장식 요소</li>
+                <li><strong>백그라운드</strong>: 반복 패턴으로 배경 디자인</li>
+                <li><strong>브랜딩</strong>: 명함, 포스터, SNS 프로필 등</li>
+                <li><strong>애니메이션</strong>: CSS나 JavaScript로 움직이는 효과 추가</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function downloadWave(svgId, filename, backgroundType) {
+            try {
+                console.log('웨이브 다운로드 시작:', svgId, filename, backgroundType);
+                
+                const svg = document.getElementById(svgId);
+                if (!svg) {
+                    alert('SVG 요소를 찾을 수 없습니다: ' + svgId);
+                    return;
+                }
+                
+                // SVG 복제
+                const clonedSvg = svg.cloneNode(true);
+                
+                // 크기 설정 (가로형이므로 가로가 더 김)
+                const canvasWidth = 1000;
+                const canvasHeight = 400;
+                
+                // Canvas 생성
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = canvasWidth;
+                canvas.height = canvasHeight;
+                
+                // 배경 그리기
+                if (backgroundType === 'white') {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                } else if (backgroundType === 'dark') {
+                    ctx.fillStyle = '#333333';
+                    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                }
+                // transparent인 경우 배경을 그리지 않음
+                
+                // SVG 데이터 URL 생성
+                const svgData = new XMLSerializer().serializeToString(clonedSvg);
+                const svgDataUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+                
+                // 이미지 로드 및 Canvas에 그리기
+                const img = new Image();
+                img.onload = function() {
+                    // SVG를 Canvas 중앙에 그리기
+                    const scale = Math.min(canvasWidth / img.width, canvasHeight / img.height) * 0.8;
+                    const x = (canvasWidth - img.width * scale) / 2;
+                    const y = (canvasHeight - img.height * scale) / 2;
+                    
+                    ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                    
+                    // PNG로 변환하여 다운로드
+                    canvas.toBlob(function(blob) {
+                        if (blob) {
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = filename + '.png';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            URL.revokeObjectURL(url);
+                            console.log('다운로드 완료:', filename);
+                        } else {
+                            alert('PNG 생성에 실패했습니다.');
+                        }
+                    }, 'image/png', 1.0);
+                };
+                
+                img.onerror = function() {
+                    alert('이미지 로드에 실패했습니다.');
+                };
+                
+                img.src = svgDataUrl;
+                
+            } catch (error) {
+                console.error('다운로드 오류:', error);
+                alert('다운로드 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+        
+        // 페이지 로드 완료 후 테스트
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('가로형 웨이브 아이콘 페이지 로드 완료');
+        });
+    </script>
+</body>
+</html>

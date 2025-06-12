@@ -2,7 +2,7 @@ name: flutter_fastapi_auth
 description: A Flutter frontend for FastAPI authentication
 version: 1.0.0+1
 environment:
-  sdk: ">=2.17.0 <3.0.0"
+  sdk: '>=2.17.0 <3.0.0'
 
 dependencies:
   dio: ^5.8.0+1
@@ -14,12 +14,31 @@ dependencies:
   intl: ^0.20.2
   provider: ^6.0.0
   shared_preferences: ^2.0.15
-
+  geolocator: ^10.1.0
+  porcupine_flutter: ^3.0.3
+  permission_handler: ^11.0.1
+  flutter_secure_storage: ^8.0.0
+  speech_to_text: ^6.3.0
+  flutter_tts: ^3.8.5
+  flutter_svg: ^2.0.9
+  flutter_native_splash: ^2.3.6
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.13.1
+
 flutter:
   uses-material-design: true
+  assets:
+    - assets/
+    - assets/icon/
+    - assets/png/
 
+flutter_icons:
+  android: true
+  ios: false
+  image_path: 'assets/icon/SOOM_icon.png'
 
+flutter_native_splash:
+  remove: true

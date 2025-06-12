@@ -1,9 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 <uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+<uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
+<uses-permission android:name="android.permission.RECORD_AUDIO"/>
 
     <application
         android:usesCleartextTraffic="true"
-        android:label="frontend"
+        android:label="숨 SOOM"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
